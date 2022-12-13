@@ -1,6 +1,16 @@
+# wandb log
+wandb/*
+
+
 # data
-data/*
-!data/.gitkeep
+data/UCF101/*
+data/HMDB51/*
+
+!data/HMDB51/.gitkeep
+!data/UCF101/.gitkeep
+!data/HMDB51/annotation/
+!data/UCF101/annotation/
+
 
 temp/*
 
