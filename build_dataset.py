@@ -21,9 +21,8 @@ def get_dataset_arg():
 def get_data_url(dataset, process_type):
 
     DATASET_URLS = {
-    "ucf101_5_frames_uniform": "https://www.kaggleusercontent.com/kf/113725945/eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..AXcTEd81ToCt1f3JPP_EVA.EAm91AnyqPKOl4UMWTAQdjOo6c7OiXuqO2Unl3wnBFjbXpg_-Sqd6A-bNsdBlLabsmqjfj1UgkgVHpqcWNUCvV5ZxMQH1z1Vii11rwesabfnX7V56lcw5SCbo8JSUuZt2r23JBMSqiId6UxOMK6MfJaZAZJpkQ6Fe16E5ZwSGGCZhhoDkMa7hMaB_PDGoPsQg2gpDWQFgaYXJINffExJjlA-cDmP9zgGDHncDq8YdcrRyaB-RNQQLNGjIXv1MZA71zTwrSk_5fEXjYVzgW1hHb82ufzL34cy_nLw5ZpktxGBedobfx8nVZQsGOT52o1LMLmP9C_0QUjxewvemLxGYZlTd_qaPxtviBT-7oZpJvXYT4DzkMOQsuCEbOMII4tDhrnnLCSDFEvEBEhxl0V35ViQfNoi5RdT9YQwzbG1YYazBqIvOx3G6gr_PpPYAxznZmWbP6UJAP6d1AAxGCKweYSvw_UGss8YuoN5TlXF3pzcfg_K2-Z3-ZAwGRJXhSOMMjYnENrT2lslzYrr-hlOEGuZTqaod2hhmdHhUqL5bUClKYOShDgy1kZFZ61yBaTko3nrZRdP2C0UgrOStIMQn4Wzl2XOqPce6AYRpK4CDPhYAdP-V6mDjKwEId-bJdXDzannY9e6BdHXYKlR_Q9lDpBCmnNYFYm1r9L2smlCk7HQG92y-X-xUsXGfbsLN-0r.eyNHJXiBa9Zh0KtI8GiDIg/ucf101_processed.zip",
-    "ucf101_10_frames_uniform": "https://www.kaggleusercontent.com/kf/113724047/eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..arn681V48S_REmkgsm264w.DO1W1kdogrg3wuSmz6Cx6GXeAr95Fi3gSQAZ2vz60svirIhnUeVW0_mn1zlv2OTotsep199WRrhwEzQVXkg4ut-YRDlz11JnUqeKirKbhZTZd3B6eJKEmkdcEx5XEYhdqUX7foNSzqci4tYoEKAH2Jn-tVK0l8RLakAPGqFULnd2Uq_efANMHHveM0zCh5fUC7Zy_uhkwrOyzw9Kjq3qJEc1XwcHAtZWqQSFcuYIHLJvBSC6SWwc2ugGdxRShNbGaNV9y3gxs0h3L-zfuLP1Anpr4Kw2y5TrgtF5rhaP-BA_vPlIve1xqaIgRCRcbABtbR3FLcxUbu44bnLyweoUkYMvpdZGC9tBH-5DeAQOx7OlIZyGjMDK_vct6FCuCudddd7xK0nWpAiWIBsHqg-kVyk3PyuaQ36IIrf7WiwXbQbHltjUc4KlxOTdyqal8j3zYp5sNNibs4Yffifdv6-AGKXv_IEk4RG4owXm1Hc3Fxs3xCdjkdALuF3nniplqt4VRpK7vnG8_8mthu0t5ttHCUuqvBrkwkIQA5OwP2SlyM2l1uvI0e520RaJNuBj3HjsB4TDhf5NPRLFlGYS3oB2K_kbBZ9Bdd4vPtbQLQvnoPpH1TQdtowjBgPjfFzh53QJmelRMp6MLGEYbes44slvy-fMk-NGRk1oNR3knhf4ww8V8xuws1HLc2TK-KSIJ2zy.DgMK8AF3E5vk8nUGbBlBTw/ucf101_processed.zip",
-    "hmdb51_5_frames_uniform": "https://www.kaggleusercontent.com/kf/113731246/eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..nRMOifFZVrvO9x33AM-iRw.R2iFcTv4_-_fmPNlztLkQZ1WFtLm0Xp7Wbl9GvdIEl2KbFEaPoyWvDRL8zhCkpcDIsKp7KGYVde7lonP0GrYNvU6FWxRoEZE5i72yu4FbM6WQ_2OhiY-wGHx9JaTalZ6ypgMihXj9LlmEnT6eAkopEz0lpSj1ZV-VOsMcdGbfGN5PuLwLHOUoaKh9pSRtepYmn6-qka8K3SyJaotqjCRHkBaJZ9AulRDaUxL9vHLk0Xm_dSzS_b77LbynOrScx7qVZQJ6Jd7LOBuX21naspAvX_9H8-kzZwwTGcYWcBM07uZlLwwbnYINb_XeZOYFf2SClsCwBIeFVakbhnf4a4-lK-KsIb2CLfhpx5BdAtLik3mXkLZcaXlZeN98V1ZZgZpNLMmfy5_wcG-3dCfkkBeAe4a4si-guI6Ges30gUOxf1K_xsIzFfPuHzcNxzqarn8bKc1obnZOxSQ215rE-GsS34e5Wa6N90iM48NUfLqLLl6QfpY8AEqSHPxXJTcm8rhU07N0CX2hcplfL4rK1WmUI6cCGHFmLKV9pu3UyQ1g5iDa0ZeD2riIPlPa1D8qKQumr-LDc4WRvTnpQJ8d1UEQds5d5fSVVAWRTb0bEkh99ncUWPjUOz3gNFGiBqo_5k41fr-VSYeAuGMrprCMBKDeF11KXLZiFgewnhN6ndjhB2DTdyuTp2nyEKvWOwOleZL.nxTxd3V1F6EUnBQGPEFvCw/ucf101_processed.zip",   
+    "ucf101_5_frames_uniform": "https://www.kaggleusercontent.com/kf/113750491/eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..sVUWgz6PD-iOFgBLORnxxQ.6xJ1TotkB85GzaNtzHf9Qbkkf2Va04Eyq-MESgW_ej9vFYUUi7NhB0He3Ts54j7z5HyG-2TlnrbOTWk2PkwvH4aFVzMy4UTsizIjy8jglK9-EtCaydcwO3f7AN0StoCMMqi8PL8KwD_OOdNTnzBEuyDVoGHPfYjI-sdMMdpW5mAHXyuyhn-h6QBUUZy-Zl4SMK5S90KqQ0ycx3RGEmRYWxR03Iz-WHXVDwjvuugOsx_ZdnNKD6OXGfEXUSNInBFy8KEBHQJXm7ilOVEnjAtFDIzQHhIAcK_lpEhKxJEACrFRMg4GYEEShl2WysNkpk0WmBxsash11JkLGROE4XOPTljUtg-X-gW85Ko5fdQWlRo2dFM45aFBHfJSBN2ELcQ8c1sdnPwuek1KT5TFKpCe3mBKMIt12mGps_cStXdZu_h7vloGXR22lw-WRpXoA3QtEIkohXz3ifKJyKfy243GfdI65ZovoFVH7uHMQrvM-GW2knhL_u7PdHyaky5jfqsZNQmRPeM6nF6_yYMXx9TAAYW8dkp5V7pRwtFB44xqjduLsM-dBse6YabfTmkQE2RkhKTz9RKBi9cIC9S9ltAC90uRDctKAYEK87DKBZW-VptkBNoqKd_n1yucgaJ2iWkgLNhJvA3qBEr_Z5BT2Ttc911sk5Vf-VagxtAMoWesBoMAkozgWCwh0H-r-WXvhnPu.7w-Ox8VE2awMs-OyFAPAzw/ucf101_processed.zip",
+    "hmdb51_5_frames_uniform": "https://www.kaggleusercontent.com/kf/113750535/eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..1svNMkONRLLEaw-7cFkAzw.LptlltPfIRvwyn-rcK-g0q2F-pOFIXKl6IuiBaNZ3BXv1E9nTwrFq5JdR6EamaoGsjTU1phaw3lDxpk6UMztRggR2ftAK51C1rNIH8NsKJjr-2DefdhJhriIwTcuansye9r7mAUE59MHaDJuJvAPkfrgx0zKSgvdAhC-LGWGDk-ro6PlV4-1JxulGO1xd6aWJxdtqi62HkigkVP8KDCA1YKzkfhteRSaW6rYpjHI7CDE1j9jTg80_UQyXYQAE89p8wucC5j-h9ynNDu6m1E7y_Ca8kjkImQD3mAmzDIPMy9W2c-jvkjIghT4BNFhmAemh6qMzR2sY1vPrnlxOe96D1ERmczl17TpfYHAZgrhUI6_rbbmChVBC-elLm9jkXfLyJ9zsc1TDnOX0ODfgCH8sS_4azyOwS2XZh3hV3Z3I-p8yESLJaH_GYKapALyYzzOJBYllrRfAsOv5Gm9aiMMrEZkB3u6MRSaxLl8msStxm_FEecDDEFEi5nNwlY6WPtWXYJkx_CNgGGMQt6o5hu--KyoxH3PZVwNg-YT5lWEUu4p1-nDMek4F1UsxXjG5aH4pd9Z61LbSoCOEyVCGy0jBZvxOSt8YE3W1MvRntxGTPkvJBwiUsKJLCIUasynoSlTOYoyqFAkHWbOFvK07aQmk_T4dWdC6p8sAyQa5a-G1TvXGeab_YO96iJ3rmhPTw-q.D6kEnKztk0kSR5Fzn0l4fQ/hmdb51_processed.zip",   
     }
 
     return DATASET_URLS[dataset + '_' + process_type]
@@ -56,7 +55,13 @@ if __name__ == '__main__':
     runcmd(f'wget {download_url} -P "./temp/"', is_wait=True)
 
     print("Unzip the dataset...")
-    runcmd(f'unzip -qo ./temp/ucf101_processed.zip -d {final_data_folder} && rm -rf ./temp/ucf101_processed.zip', 
+
+    zip_file_name = args.dataset + '_processed.zip'
+
+    runcmd(f'unzip -qo ./temp/{zip_file_name} -d {final_data_folder} \
+            && rm -rf ./temp/{zip_file_name} \
+            && mv {final_data_folder}/kaggle/temp/*/* {final_data_folder}/ \
+            && rm -rf {final_data_folder}/kaggle', 
             is_wait=True)
 
     print("--DONE--")
