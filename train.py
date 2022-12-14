@@ -70,14 +70,13 @@ def fit(epochs, model, train_loader, val_loader, criterion,  optimizer, schedule
         running_loss = 0
         #training loop
         model.train()
-        for i, data in enumerate(tqdm(train_loader)):
+        for _, data in enumerate(tqdm(train_loader)):
             #training phase
             image, label = data
             
             image = image.to(device); label = label.to(device);
             
             #forward
-            model.Lstm.reset_hidden_state()
             output = model(image)
             loss = criterion(output, label)
             
@@ -99,7 +98,6 @@ def fit(epochs, model, train_loader, val_loader, criterion,  optimizer, schedule
                     
                     image = image.to(device); label = label.to(device);
                     
-                    model.Lstm.reset_hidden_state()
                     output = model(image)
                     #loss
                     loss = criterion(output, label)
