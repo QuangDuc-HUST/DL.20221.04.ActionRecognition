@@ -74,7 +74,8 @@ def fit(epochs, model, train_loader, val_loader, criterion,  optimizer, schedule
             #training phase
             image, label = data
             
-            image = image.to(device); label = label.to(device);
+            image = image.to(device)
+            label = label.to(device)
             
             #forward
             output = model(image)
