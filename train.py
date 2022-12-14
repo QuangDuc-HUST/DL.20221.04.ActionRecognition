@@ -35,6 +35,8 @@ def get_lr(optimizer):
 def fit(epochs, model, train_loader, val_loader, criterion,  optimizer, scheduler, wandb_init):
         
     # wandb
+    wandb.login(anonymous="must")
+
     wandb.init(**wandb_init)
     torch.cuda.empty_cache()
     
@@ -194,7 +196,6 @@ if __name__ == '__main__':
     WANDB_NOTE = "Test colab"
 
     wandb_init =  {
-                "anonymous":"allow",
                 "project":"DL-Recognition", 
                 "notes": WANDB_NOTE,
                 "config": {
