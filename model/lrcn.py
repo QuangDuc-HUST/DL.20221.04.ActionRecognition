@@ -1,4 +1,4 @@
-import utils.lrcn_model as lrcn_model
+from .utils import lrcn_model
 
 class LRCN(lrcn_model.ConvLstm):
     def __init__(self, *args, **kwargs):
