@@ -13,7 +13,7 @@ def get_dataset_arg():
 
     parser.add_argument('--data_folder', type=str, default='./data/')
     parser.add_argument('--kaggle_config', type=str, default='./script/kaggle_config.sh')
-    parser.add_argument('--dataset', required = True, type=str, choices=['ucf101', 'hmdb51'])
+    parser.add_argument('--dataset', required=True, type=str, choices=['ucf101', 'hmdb51'])
     parser.add_argument('--process_type', type=str, default='5_frames_uniform' )
     
     return parser.parse_args()

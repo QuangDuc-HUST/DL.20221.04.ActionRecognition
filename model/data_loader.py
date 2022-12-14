@@ -1,48 +1,13 @@
 import os
 
-
 import pandas as pd
 
 import cv2
-import albumentations as A
-from albumentations.pytorch import ToTensorV2
 
 from sklearn import model_selection
 
 import torch
 from torch.utils.data import Dataset, DataLoader
-
-
-def get_transforms():
-
-    train_transforms = A.Compose(
-        [
-            A.Resize(256, 256, interpolation=cv2.INTER_CUBIC),
-            A.Normalize(),
-            ToTensorV2(),
-        ]
-        )
-
-    val_transforms = A.Compose(
-        [   
-            A.Resize(256, 256, interpolation=cv2.INTER_CUBIC),
-            A.Normalize(),
-            ToTensorV2(),
-        ]
-        )
-
-
-    test_transforms = A.Compose(
-        [   
-            A.Resize(256, 256, interpolation=cv2.INTER_CUBIC),
-            A.Normalize(),
-            ToTensorV2(),
-        ]
-        )
-    
-    return {'train_transforms': train_transforms, 
-            'val_transforms': val_transforms,
-            'test_transforms': test_transforms}
 
 
 class ActionRecognitionDataset(Dataset):
@@ -87,14 +52,22 @@ class ActionRecognitionDataset(Dataset):
 
 class ActionRecognitionDataWrapper():
 
-    def __init__(self, data_dir, dataset, split, transforms, batch_size, num_workers):
+    def __init__(self, 
+                 data_dir, 
+                 dataset, 
+                 data_split, 
+                 transforms, 
+                 batch_size, 
+                 num_workers,
+                 *args, 
+                 **kwargs):
 
         self.data_dir = data_dir
         self.dataset = dataset
         self.transforms = transforms
         self.batch_size = batch_size
         self.num_workers = num_workers
-        self.split = split
+        self.split = data_split
 
         self._setup()
 

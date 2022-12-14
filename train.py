@@ -4,6 +4,7 @@
 
 import os
 import time
+import argparse
 from tqdm import tqdm
 
 import wandb
@@ -14,23 +15,34 @@ import torch
 from torch import nn
 
 from model.lrcn import LRCN
-from model.data_loader import ActionRecognitionDataWrapper, get_transforms
+from model.data_loader import ActionRecognitionDataWrapper 
+from utils import seed_everything, get_training_device, acc_metrics, get_lr, get_transforms
 
-from utils import seed_everything
+def get_arg_parser():
+
+    parser = argparse.ArgumentParser()
+
+    # PROGRAM level args
+    parser.add_argument('--data_dir', type=str, required=True)
+    # parser.add_argument('--ckp_dir', default='/mnt/ducnq/ckp-mood')
+
+    # DataModule specific args
+    parser.add_argument('--dataset', type=str, required=True, choices=['hmdb51', 'ucf101'])
+    parser.add_argument('--data_split', type=str, default='split1', choices=['split1', 'split2', 'split3'])
+    parser.add_argument('--batch_size', type=int, default=64)
+    parser.add_argument('--num_workers', type=int, default=int(os.cpu_count() / 2))
+
+    # Module specific args
+    parser = LRCN.add_model_specific_args(parser)
+
+    # hyperparameters specific args
+    parser.add_argument('--max_epochs', type=int, default=5)
+    parser.add_argument('--lr', type=float, default=1e-4)
+    parser.add_argument('--sl_gammar', type=float, default=0.999)
 
 
-def get_training_device():
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print("We are training on", device)
-    return device
+    return parser.parse_args()
 
-
-def acc_metrics(preds, targets):
-    return (preds.argmax(1) == targets).sum() / preds.shape[0]
-    
-def get_lr(optimizer):
-    for param_group in optimizer.param_groups:
-        return param_group['lr']
 
 def fit(epochs, model, train_loader, val_loader, criterion,  optimizer, scheduler, wandb_init):
         
@@ -154,16 +166,11 @@ def fit(epochs, model, train_loader, val_loader, criterion,  optimizer, schedule
     return history
 
 
-
 if __name__ == '__main__':
 
-    LR = 1e-4
-    NUM_EPOCH = 5
-    NUM_WORKERS = 2
-    BATCH_SIZE = 64
-    SL_GAMMA = 0.999
-    NUM_CLASSES = 51
-    DATA_FOLDER_PATH = 'data/HMDB51/5_frames_uniform/'
+    # Get parser argument
+    args = get_arg_parser()
+    dict_args = vars(args)
 
     # set everything
     seed_everything(seed=73)
@@ -171,50 +178,47 @@ if __name__ == '__main__':
     # get training device
     device = get_training_device()
 
+    # Get data wrapper
+    data_wrapper = ActionRecognitionDataWrapper(**dict_args, 
+                                                transforms=get_transforms())
+    # Get model 
+    if args.dataset == ['hmdb51']:
+        NUM_CLASSES = 51
+    else:
+        NUM_CLASSES = 101
 
-    
-    data_wrapper = ActionRecognitionDataWrapper(DATA_FOLDER_PATH,
-                                                'hmdb51',
-                                                'split1',
-                                                get_transforms(),
-                                                BATCH_SIZE,
-                                                NUM_WORKERS)
-
-    net = LRCN(latent_dim=512,
-                hidden_size=256,
-                lstm_layers=2,
-                bidirectional=True,
-                n_class=NUM_CLASSES)
+    net = LRCN(**dict_args,
+               n_class=NUM_CLASSES)
         
+    # Loss functions
     criterion = nn.CrossEntropyLoss()
 
-    optimizer = torch.optim.Adam(params = net.parameters(), lr=LR)
-                                
-    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma = SL_GAMMA)
+    # Optimizer vs scheduler
+    optimizer = torch.optim.Adam(params = net.parameters(), lr=args.lr)
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma = args.sl_gammar)
 
-    # Wandb note
+    # Wandb settings
     WANDB_NOTE = "Test colab"
 
     wandb_init =  {
                 "project":"DL-Recognition", 
                 "notes": WANDB_NOTE,
                 "config": {
-                      "dataset": "HMDB51",
                       "architecture": "LCRN",
-                      "learning_rate": LR ,
-                      "epochs": NUM_EPOCH,
-                      "batch size": BATCH_SIZE,
-                      "optimizers and schedulers": "adam, explr gamma 1",
+                      "optimizers and schedulers": "adam, explr",
+                      **dict_args
                       }
     }
 
-    fit(epochs=NUM_EPOCH, 
+
+    # Training
+    fit(epochs=args.max_epochs, 
               model=net, 
               train_loader=data_wrapper.get_train_dataloader(), 
               val_loader=data_wrapper.get_val_dataloader(), 
               criterion=criterion, 
               optimizer=optimizer, 
               scheduler=scheduler, 
-              wandb_init={})
+              wandb_init=wandb_init)
 
 
