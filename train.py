@@ -6,14 +6,18 @@ import os
 import time
 from tqdm import tqdm
 
+import wandb
+
 import numpy as np
 
 import torch
 from torch import nn
 
-from utils import seed_everything
 from model.lrcn import LRCN
 from model.data_loader import ActionRecognitionDataWrapper, get_transforms
+
+from utils import seed_everything
+
 
 def get_training_device():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -31,7 +35,7 @@ def get_lr(optimizer):
 def fit(epochs, model, train_loader, val_loader, criterion,  optimizer, scheduler, wandb_init):
         
     # wandb
-    # wandb.init(**wandb_init)
+    wandb.init(**wandb_init)
     torch.cuda.empty_cache()
     
     train_losses = []
@@ -126,14 +130,14 @@ def fit(epochs, model, train_loader, val_loader, criterion,  optimizer, schedule
                   "Val Acc: {:.3f}..".format(val_acc/len(val_loader)),
                   "Time: {:.2f}m".format((time.time()-since)/60))
             
-            # wandb.log(
-            # {
-            #  "Epoch": e + 1,
-            #  "Learning Rate": lrs[-1],
-            #  "Train Loss": running_loss/len(train_loader),
-            #  "Val Loss": val_loss/len(val_loader),
-            #  "Val Acc" :val_acc/len(val_loader),
-            # })
+            wandb.log(
+            {
+             "Epoch": e + 1,
+             "Learning Rate": lrs[-1],
+             "Train Loss": running_loss/len(train_loader),
+             "Val Loss": val_loss/len(val_loader),
+             "Val Acc" :val_acc/len(val_loader),
+            })
             
     history = {'train_loss' : train_losses, 
                'val_loss': val_losses, 
@@ -144,7 +148,7 @@ def fit(epochs, model, train_loader, val_loader, criterion,  optimizer, schedule
     
     print('Total time: {:.2f} m' .format((time.time()- fit_time)/60))
     ##
-    # wandb.finish()
+    wandb.finish()
     return history
 
 
@@ -186,7 +190,22 @@ if __name__ == '__main__':
                                 
     scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma = SL_GAMMA)
 
+    # Wandb note
+    WANDB_NOTE = "Test colab"
 
+    wandb_init =  {
+                "anonymous":"allow",
+                "project":"DL-Recognition", 
+                "notes": WANDB_NOTE,
+                "config": {
+                      "dataset": "HMDB51",
+                      "architecture": "LCRN",
+                      "learning_rate": LR ,
+                      "epochs": NUM_EPOCH,
+                      "batch size": BATCH_SIZE,
+                      "optimizers and schedulers": "adam, explr gamma 1",
+                      }
+    }
 
     fit(epochs=NUM_EPOCH, 
               model=net, 
