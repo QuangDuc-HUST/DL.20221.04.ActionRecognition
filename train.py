@@ -30,7 +30,7 @@ def get_arg_parser():
     parser.add_argument('--dataset', type=str, required=True, choices=['hmdb51', 'ucf101'])
     parser.add_argument('--data_split', type=str, default='split1', choices=['split1', 'split2', 'split3'])
     parser.add_argument('--batch_size', type=int, default=64)
-    parser.add_argument('--num_workers', type=int, default=int(os.cpu_count() / 2))
+    parser.add_argument('--num_workers', type=int, default=2)
 
     # Module specific args
     parser = LRCN.add_model_specific_args(parser)
@@ -50,6 +50,7 @@ def fit(epochs, model, train_loader, val_loader, criterion,  optimizer, schedule
     wandb.login(anonymous="must")
 
     wandb.init(**wandb_init)
+
     torch.cuda.empty_cache()
     
     train_losses = []
@@ -182,7 +183,7 @@ if __name__ == '__main__':
     data_wrapper = ActionRecognitionDataWrapper(**dict_args, 
                                                 transforms=get_transforms())
     # Get model 
-    if args.dataset == ['hmdb51']:
+    if args.dataset == 'hmdb51':
         NUM_CLASSES = 51
     else:
         NUM_CLASSES = 101
