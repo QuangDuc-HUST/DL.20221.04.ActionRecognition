@@ -1,6 +1,8 @@
 # wandb log
 wandb/*
 
+# weights 
+*.pt
 
 # data
 data/UCF101/*

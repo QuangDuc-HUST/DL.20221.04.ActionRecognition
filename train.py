@@ -2,7 +2,6 @@
 # main file 
 # 
 
-import os
 import time
 import argparse
 from tqdm import tqdm
@@ -39,7 +38,6 @@ def get_arg_parser():
     parser.add_argument('--max_epochs', type=int, default=5)
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--sl_gammar', type=float, default=0.999)
-
 
     return parser.parse_args()
 
@@ -94,10 +92,11 @@ def fit(epochs, model, train_loader, val_loader, criterion,  optimizer, schedule
             val_acc = 0
             #validation loop
             with torch.no_grad():
-                for i, data in enumerate(tqdm(val_loader)):
+                for _, data in enumerate(tqdm(val_loader)):
                     image, label= data
                     
-                    image = image.to(device); label = label.to(device);
+                    image = image.to(device) 
+                    label = label.to(device)
                     
                     output = model(image)
                     #loss
