@@ -1,7 +1,7 @@
-from .utils import c3d_model
+from .utils import custom_c3d_model, c3d_model
 
 
-class C3D(c3d_model.C3D):
+class C3D(custom_c3d_model.C3D):
     @staticmethod
     def add_model_specific_args(parent_parser):
         parser = parent_parser.add_argument_group("C3D")

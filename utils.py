@@ -20,7 +20,6 @@ def get_transforms():
             ToTensorV2(),
         ]
         )
-
     val_transforms = A.Compose(
         [   
             A.Resize(256, 256, interpolation=cv2.INTER_CUBIC),
@@ -28,8 +27,6 @@ def get_transforms():
             ToTensorV2(),
         ]
         )
-
-
     test_transforms = A.Compose(
         [   
             A.Resize(256, 256, interpolation=cv2.INTER_CUBIC),
@@ -37,7 +34,7 @@ def get_transforms():
             ToTensorV2(),
         ]
         )
-    
+        
     return {'train_transforms': train_transforms, 
             'val_transforms': val_transforms,
             'test_transforms': test_transforms}
@@ -53,21 +50,6 @@ def runcmd(cmd, is_wait=False, *args, **kwargs):
     
     if is_wait:
         process.wait()
-
-def str2bool(v):
-    """
-    src: https://stackoverflow.com/a/43357954
-    Converts string to bool type; enables command line 
-    arguments in the format of '--arg1 true --arg2 false'
-    """
-    if isinstance(v, bool):
-        return v
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
-        return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
-        return False
-    else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
 
 def seed_everything(seed=73):
     random.seed(seed)

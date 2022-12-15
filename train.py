@@ -51,6 +51,19 @@ def get_arg_parser():
 
     return parser.parse_args()
 
+def train():
+
+    return
+
+
+def train_and_evaluate():
+
+    return 
+
+
+
+
+
 
 def fit(epochs, model, train_loader, val_loader, criterion,  optimizer, scheduler, wandb_init):
         
