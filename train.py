@@ -7,8 +7,6 @@ from tqdm import tqdm
 
 import wandb
 
-import numpy as np
-
 import torch
 from torch import nn
 
@@ -16,8 +14,11 @@ from model.lrcn import LRCN
 from model.c3d import C3D
 from model.data_loader import ActionRecognitionDataWrapper 
 
+from evaluate import evaluate
+
 import utils
 from utils import seed_everything, get_training_device, acc_metrics, get_lr, get_transforms
+
 
 def get_arg_parser():
 
@@ -53,90 +54,123 @@ def get_arg_parser():
 
     return parser.parse_args()
 
+def train(model, train_loader, criterion, optimizer, scheduler, args):
+    
+    model.train() 
+    loss_avg = utils.RunningAverage()
+
+    with tqdm(total=len(train_loader)) as t:
+        for i , data in enumerate(train_loader):
+            image, label = data
+            
+            image = image.to(args.device, non_blocking=True)
+            label = label.to(args.device, non_blocking=True)
+            
+            #forward
+            output = model(image)
+            loss = criterion(output, label)
+            
+            #backward
+            loss.backward()
+            optimizer.step() #update weight          
+            optimizer.zero_grad() #reset gradient
+        
+            loss_avg.update(loss.item())
+
+            if i  % args.save_summary_steps:
+                pass
+
+            t.set_postfix(loss='{:05.3f}'.format(loss_avg()))
+            t.update()
+
+    current_lr = get_lr(optimizer)
+
+    #step scheduler   
+    scheduler.step()  
+
+    return loss_avg(), current_lr
 
 
 def train_and_valid(epochs, model, train_loader, val_loader, criterion,  optimizer, scheduler, wandb_init, args):
         
     # wandb
     wandb.login(anonymous="must")
-  
     wandb.init(**wandb_init)
 
-    torch.cuda.empty_cache()
-    
-    model.to(device)
+    # torch.cuda.empty_cache()
         
     for e in range(epochs):
-
-        model.train() 
-        loss_avg = utils.RunningAverage()
-        with tqdm(total=len(train_loader)) as t:
-            for i , data in enumerate(train_loader):
-                #training phase
-                image, label = data
+        
+        print("Epoch {}/{}".format(e + 1, epochs))
+        
+        #training phase
+        # model.train() 
+        # loss_avg = utils.RunningAverage()
+        # with tqdm(total=len(train_loader)) as t:
+        #     for i , data in enumerate(train_loader):
+        #         image, label = data
                 
-                image = image.to(device, non_blocking=True)
-                label = label.to(device, non_blocking=True)
+        #         image = image.to(args.device, non_blocking=True)
+        #         label = label.to(args.device, non_blocking=True)
                 
-                #forward
-                output = model(image)
-                loss = criterion(output, label)
+        #         #forward
+        #         output = model(image)
+        #         loss = criterion(output, label)
                 
-                #backward
-                loss.backward()
-                optimizer.step() #update weight          
-                optimizer.zero_grad() #reset gradient
+        #         #backward
+        #         loss.backward()
+        #         optimizer.step() #update weight          
+        #         optimizer.zero_grad() #reset gradient
             
-                loss_avg.update(loss.item())
+        #         loss_avg.update(loss.item())
 
-                if i  % args.save_summary_steps:
-                    pass
+        #         if i  % args.save_summary_steps:
+        #             pass
 
-                t.set_postfix(loss='{:05.3f}'.format(loss_avg()))
-                t.update()
+        #         t.set_postfix(loss='{:05.3f}'.format(loss_avg()))
+        #         t.update()
 
-        model.eval()    
-        val_loss = 0
-        val_acc = 0
-        with tqdm(total=len(val_loader)) as t:
-            with torch.no_grad():
-                for _, data in enumerate(val_loader):
-                    image, label= data
+        train_loss, current_lr = train(model, train_loader, criterion, optimizer, scheduler, args)
+
+        # model.eval()    
+        # val_loss = 0
+        # val_acc = 0
+        # with tqdm(total=len(val_loader)) as t:
+        #     with torch.no_grad():
+        #         for _, data in enumerate(val_loader):
+        #             image, label= data
                     
-                    image = image.to(device, non_blocking=True) 
-                    label = label.to(device, non_blocking=True)
+        #             image = image.to(args.device, non_blocking=True) 
+        #             label = label.to(args.device, non_blocking=True)
                     
-                    output = model(image)
-                    #loss
-                    loss = criterion(output, label)
-                    #evaluation metrics
-                    val_acc += acc_metrics(output, label)
+        #             output = model(image)
+        #             #loss
+        #             loss = criterion(output, label)
+        #             #evaluation metrics
+        #             val_acc += acc_metrics(output, label)
                     
-                    val_loss += loss.item()
+        #             val_loss += loss.item()
 
-                    t.update()
-
-        #step scheduler   
-        current_lr = get_lr(optimizer)
-
-        scheduler.step()       
+        #             t.update()
 
         
-        print("Epoch:{}/{}..".format(e+1, epochs),
-                "Learning Rate: {}".format(current_lr),
-                "Train Loss: {:.3f}..".format(loss_avg()),
-                "Val Loss: {:.3f}..".format(val_loss/len(val_loader)),
-                "Val Acc: {:.3f}..".format(val_acc/len(val_loader))
+        val_loss, val_acc = evaluate(model, val_loader, criterion, acc_metrics, args)
+
+
+        print("Learning Rate: {}".format(current_lr),
+              "Train Loss: {:.3f}..".format(train_loss),
+              "Val Loss: {:.3f}..".format(val_loss),
+              "Val Acc: {:.3f}..".format(val_acc)
                 )
         
 
         wandb.log(
         {
-            "Epoch": e,
+            "Epoch": e + 1,
             "Learning Rate": current_lr,
-            "Train Loss": loss_avg(),
-            "Val Loss": val_loss/len(val_loader),
-            "Val Acc" :val_acc/len(val_loader),
+            "Train Loss": train_loss,
+            "Val Loss": val_loss,
+            "Val Acc" :val_acc,
         })
             
 
@@ -146,6 +180,8 @@ if __name__ == '__main__':
 
     # Get parser argument
     args = get_arg_parser()
+    # get training device
+    args.device = get_training_device()
     dict_args = vars(args)
 
     # set everything
@@ -163,8 +199,6 @@ if __name__ == '__main__':
                       }
     }
 
-    # get training device
-    device = get_training_device()
 
     # Get data wrapper
     data_wrapper = ActionRecognitionDataWrapper(**dict_args, 
@@ -183,7 +217,9 @@ if __name__ == '__main__':
     elif args.model_name == "c3d":
         net = C3D(**dict_args,
                     n_class=NUM_CLASSES)
-           
+    
+    net.to(args.device)
+
     # Loss functions
     criterion = nn.CrossEntropyLoss()
 

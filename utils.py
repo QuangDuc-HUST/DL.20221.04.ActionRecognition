@@ -1,6 +1,6 @@
 import os
 import random
-import argparse
+import shutil
 import subprocess
 
 import albumentations as A
@@ -79,6 +79,51 @@ def seed_everything(seed=73):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
+
+def save_checkpoint(state, is_best, checkpoint):
+    """Saves model and training parameters at checkpoint + 'last.pth'. If is_best==True, also saves
+    checkpoint + 'best.pth'
+    
+    Args:
+        state: (dict) contains model's state_dict, may contain other keys such as epoch, optimizer state_dict 
+            (epoch, state_dict, optimizer)
+        is_best: (bool) True if it is the best model seen till now
+        checkpoint: (string) folder where parameters are to be saved
+    """
+    file_path = os.path.join(checkpoint, 'last.pth')
+
+    if not os.path.exists(checkpoint):
+        print("Checkpoint Directory does not exist! Making directory {}".format(checkpoint))
+        os.mkdirs(checkpoint)
+    else:
+        print("Checkpoint Directory exists! ")
+    
+    torch.save(state, file_path)
+
+    if is_best:
+        shutil.copyfile(file_path, os.path.join(checkpoint, 'best.pth'))
+    
+def load_checkpoint(checkpoint, model, optimizer=None):
+    """Loads model parameters (state_dict) from file_path. If optimizer is provided, loads state_dict of
+    optimizer assuming it is present in checkpoint.
+
+    Args:
+        checkpoint: (string) filename which needs to be loaded
+        model: (torch.nn.Module) model for which the parameters are loaded
+        optimizer: (torch.optim) optional: resume optimizer from checkpoint
+    """
+
+    if not os.path.exists(checkpoint):
+        raise("File doesn't exist {}".format(checkpoint))
+    
+    checkpoint = torch.load(checkpoint)
+    model.load_state_dict(checkpoint['state_dict']) #maybe epoch as well
+
+    if optimizer:
+        optimizer.load_state_dict(checkpoint['optim_dict'])
+
+    return checkpoint
+
 
 def get_training_device():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
