@@ -15,21 +15,21 @@ def get_transforms():
 
     train_transforms = A.Compose(
         [
-            A.Resize(256, 256, interpolation=cv2.INTER_CUBIC),
+            A.Resize(112, 112, interpolation=cv2.INTER_CUBIC),
             A.Normalize(),
             ToTensorV2(),
         ]
         )
     val_transforms = A.Compose(
         [   
-            A.Resize(256, 256, interpolation=cv2.INTER_CUBIC),
+            A.Resize(112, 112, interpolation=cv2.INTER_CUBIC),
             A.Normalize(),
             ToTensorV2(),
         ]
         )
     test_transforms = A.Compose(
         [   
-            A.Resize(256, 256, interpolation=cv2.INTER_CUBIC),
+            A.Resize(112, 112, interpolation=cv2.INTER_CUBIC),
             A.Normalize(),
             ToTensorV2(),
         ]

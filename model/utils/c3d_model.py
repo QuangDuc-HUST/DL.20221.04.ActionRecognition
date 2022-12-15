@@ -6,7 +6,7 @@ class C3D(nn.Module):
     The C3D network as described in [1].
     """
 
-    def __init__(self):
+    def __init__(self, drop_out):
         super(C3D, self).__init__()
 
         self.conv1 = nn.Conv3d(3, 64, kernel_size=(3, 3, 3), padding=(1, 1, 1))
@@ -31,11 +31,14 @@ class C3D(nn.Module):
         self.fc7 = nn.Linear(4096, 4096)
         self.fc8 = nn.Linear(4096, 487)
 
-        self.dropout = nn.Dropout(p=0.5)
+        self.dropout = nn.Dropout(p=drop_out)
 
         self.relu = nn.ReLU()
 
     def forward(self, x):
+
+      
+        x = x.transpose(1, 2)
 
         h = self.relu(self.conv1(x))
         h = self.pool1(h)
