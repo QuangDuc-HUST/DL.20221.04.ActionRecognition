@@ -3,6 +3,6 @@
 #
 
 
-def evaluate():
+def evaluate(model):
 
     return 
