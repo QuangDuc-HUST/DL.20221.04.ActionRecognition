@@ -14,6 +14,7 @@ import torch
 from torch import nn
 
 from model.lrcn import LRCN
+from model.c3d import C3D
 from model.data_loader import ActionRecognitionDataWrapper 
 from utils import seed_everything, get_training_device, acc_metrics, get_lr, get_transforms
 
@@ -31,13 +32,22 @@ def get_arg_parser():
     parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--num_workers', type=int, default=2)
 
-    # Module specific args
-    parser = LRCN.add_model_specific_args(parser)
-
     # hyperparameters specific args
     parser.add_argument('--max_epochs', type=int, default=5)
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--sl_gammar', type=float, default=0.999)
+
+    # Module specific args
+    ## which model to use
+    parser.add_argument('--model_name', type=str, required=True, choices=["lrcn", "c3d"])
+
+    ## Get the model name now 
+    temp_args, _ = parser.parse_known_args()
+
+    if temp_args.model_name == "lrcn":
+        parser = LRCN.add_model_specific_args(parser)
+    elif temp_args.model_name == "c3d":
+        parser = C3D.add_model_specific_args(parser)
 
     return parser.parse_args()
 
@@ -180,15 +190,21 @@ if __name__ == '__main__':
     # Get data wrapper
     data_wrapper = ActionRecognitionDataWrapper(**dict_args, 
                                                 transforms=get_transforms())
-    # Get model 
+    
+    # Get NUM_CLASSES
     if args.dataset == 'hmdb51':
         NUM_CLASSES = 51
     else:
         NUM_CLASSES = 101
 
-    net = LRCN(**dict_args,
-               n_class=NUM_CLASSES)
-        
+    # Get model 
+    if args.model_name == "lrcn":
+        net = LRCN(**dict_args,
+                    n_class=NUM_CLASSES)
+    elif args.model_name == "c3d":
+        net = C3D(**dict_args,
+                    n_class=NUM_CLASSES)
+            
     # Loss functions
     criterion = nn.CrossEntropyLoss()
 
