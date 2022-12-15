@@ -23,7 +23,6 @@ def get_arg_parser():
     parser = argparse.ArgumentParser()
 
     # PROGRAM level args
-    parser.add_argument('--wandb_anonymous', action='store_false')
     parser.add_argument('--data_dir', type=str, required=True)
     # parser.add_argument('--ckp_dir', default='/mnt/ducnq/ckp-mood')
 
@@ -53,14 +52,11 @@ def get_arg_parser():
     return parser.parse_args()
 
 
-def fit(epochs, model, train_loader, val_loader, criterion,  optimizer, scheduler, wandb_init, args):
+def fit(epochs, model, train_loader, val_loader, criterion,  optimizer, scheduler, wandb_init):
         
     # wandb
-    if args.wandb_anonymous:
-        wandb.login(anonymous="must")
-    else:
-        wandb.login(force=True)
-
+    wandb.login(anonymous="must")
+  
     wandb.init(**wandb_init)
 
     torch.cuda.empty_cache()
@@ -239,6 +235,6 @@ if __name__ == '__main__':
               optimizer=optimizer, 
               scheduler=scheduler, 
               wandb_init=wandb_init,
-              args=args)
+              )
 
 
