@@ -3,6 +3,7 @@ wandb/*
 
 # weights 
 *.pt
+*.pth
 
 # data
 data/UCF101/*

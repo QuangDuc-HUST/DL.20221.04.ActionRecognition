@@ -1,4 +1,5 @@
 import os
+import json
 import random
 import shutil
 import subprocess
@@ -80,6 +81,14 @@ def seed_everything(seed=73):
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
 
+
+def save_dict_to_json(d, json_path):
+
+    with open(json_path, 'w') as f:
+        d = {k: float(v) for k, v in d.items()}
+        json.dump(d, f, indent=4)
+
+
 def save_checkpoint(state, is_best, checkpoint):
     """Saves model and training parameters at checkpoint + 'last.pth'. If is_best==True, also saves
     checkpoint + 'best.pth'
@@ -98,6 +107,7 @@ def save_checkpoint(state, is_best, checkpoint):
     else:
         print("Checkpoint Directory exists! ")
     
+    print(f"Saving checkpoint... {file_path}")
     torch.save(state, file_path)
 
     if is_best:

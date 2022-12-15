@@ -29,6 +29,6 @@ class C3D(c3d_model.C3D):
 
             self.load_state_dict(torch.load(weight_path))
 
-            print("Load the weights successfully.")
+            print("Load C3D pretrained weights successfully.")
 
         self.fc8 = nn.Linear(4096, n_class)

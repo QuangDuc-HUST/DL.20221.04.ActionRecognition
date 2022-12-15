@@ -2,6 +2,7 @@
 # main file 
 # 
 
+import os
 import argparse
 from tqdm import tqdm
 
@@ -26,7 +27,7 @@ def get_arg_parser():
 
     # PROGRAM level args
     parser.add_argument('--data_dir', type=str, required=True)
-    # parser.add_argument('--ckp_dir', default='/mnt/ducnq/ckp-mood')
+    parser.add_argument('--ckp_dir', type=str, default='./ckp/baseline')
 
     # DataModule specific args
     parser.add_argument('--dataset', type=str, required=True, choices=['hmdb51', 'ucf101'])
@@ -86,19 +87,25 @@ def train(model, train_loader, criterion, optimizer, scheduler, args):
     current_lr = get_lr(optimizer)
 
     #step scheduler   
-    scheduler.step()  
+    scheduler.step() 
+
+
+    print("Learning Rate: {}..".format(current_lr),
+          "Train Loss: {:.3f}..".format(loss_avg()))
 
     return loss_avg(), current_lr
 
 
-def train_and_valid(epochs, model, train_loader, val_loader, criterion,  optimizer, scheduler, wandb_init, args):
+def train_and_valid(epochs, model, train_loader, val_loader, criterion,  optimizer, scheduler, ckp_dir, wandb_init, args):
         
     # wandb
     wandb.login(anonymous="must")
     wandb.init(**wandb_init)
 
     # torch.cuda.empty_cache()
-        
+    
+    best_val_acc = 0.0 
+
     for e in range(epochs):
         
         print("Epoch {}/{}".format(e + 1, epochs))
@@ -156,13 +163,32 @@ def train_and_valid(epochs, model, train_loader, val_loader, criterion,  optimiz
         
         val_loss, val_acc = evaluate(model, val_loader, criterion, acc_metrics, args)
 
+        is_best = val_acc >= best_val_acc
 
-        print("Learning Rate: {}".format(current_lr),
-              "Train Loss: {:.3f}..".format(train_loss),
-              "Val Loss: {:.3f}..".format(val_loss),
-              "Val Acc: {:.3f}..".format(val_acc)
-                )
-        
+        # Checkpoint saving
+
+        utils.save_checkpoint({'epoch': e + 1,
+                                'state_dict': model.state_dict(),
+                                'optim_dict': optimizer.state_dict()},
+                                is_best=is_best,
+                                checkpoint=ckp_dir)
+
+        # Logging
+
+        # Save the last
+        l_json_path = os.path.join(ckp_dir, 'metrics_val_last_weights.json')
+        utils.save_dict_to_json({'val_acc':val_acc}, l_json_path) 
+
+        # Save the best
+        if is_best:
+            print("- Found new best accuracy performance")
+            best_val_acc = val_acc
+
+            b_json_path = os.path.join(ckp_dir, 'metrics_val_best_weights.json')
+
+            utils.save_dict_to_json({'val_acc':val_acc}, b_json_path)
+
+       
 
         wandb.log(
         {
@@ -172,6 +198,16 @@ def train_and_valid(epochs, model, train_loader, val_loader, criterion,  optimiz
             "Val Loss": val_loss,
             "Val Acc" :val_acc,
         })
+
+
+        print("Learning Rate: {}".format(current_lr),
+              "Train Loss: {:.3f}..".format(train_loss),
+              "Val Loss: {:.3f}..".format(val_loss),
+              "Val Acc: {:.3f}..".format(val_acc)
+                )
+        
+
+       
             
 
     wandb.finish()
@@ -236,6 +272,7 @@ if __name__ == '__main__':
               optimizer=optimizer, 
               scheduler=scheduler, 
               wandb_init=wandb_init,
+              ckp_dir=args.ckp_dir,
               args=args
               )
 
