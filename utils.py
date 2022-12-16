@@ -83,11 +83,10 @@ class WandbLogger():
     
     def set_steps(self):
 
-        self._wandb.define_metric('epoch')
-        self._wandb.define_metric('global_step')
+        self._wandb.define_metric('trainer/global_step')
 
-        self._wandb.define_metric('train/*', step_metric='global_step')
-        self._wandb.define_metric('val/*', step_metric='epoch')
+        self._wandb.define_metric('train/*', step_metric='trainer/global_step')
+        self._wandb.define_metric('val/*', step_metric='trainer/epoch')
 
 
     def log_checkpoints(self):
@@ -102,7 +101,20 @@ class WandbLogger():
 
         self._wandb.log_artifact(model_artifact, aliases=["latest", "best"])
         
+    def log_info(self):
+        
+        log_dir = self.args.ckp_dir
 
+        wandb_log_json_path = os.path.join(log_dir, 'wandb_info.json')
+
+
+        dict_info = { 'id': self._wandb.run.id,
+                      'path': self._wandb.run.path,
+                      'url': self._wandb.run.url
+                    }
+                    
+        json.dump(dict_info, wandb_log_json_path, indent=4)
+        
 
 def runcmd(cmd, is_wait=False, *args, **kwargs):
     # function for running command

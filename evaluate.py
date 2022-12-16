@@ -1,9 +1,35 @@
 #
 # For evaluate valset and test set
 #
+
+import argparse
+
 from tqdm import tqdm
 
 import torch
+
+def get_arg_parser():
+
+    parser = argparse.ArgumentParser()
+
+    # PROGRAM level args
+    parser.add_argument('--data_dir', type=str, required=True)
+    parser.add_argument('--ckp_dir', type=str, default='./ckp/baseline')
+
+    # DataModule specific args
+    parser.add_argument('--dataset', type=str, required=True, choices=['hmdb51', 'ucf101'])
+    parser.add_argument('--data_split', type=str, default='split1', choices=['split1', 'split2', 'split3'])
+    parser.add_argument('--batch_size', type=int, default=64)
+    parser.add_argument('--num_workers', type=int, default=2)
+
+    # Wandb specific args
+    parser.add_argument('--enable_wandb', action='store_true')
+    parser.add_argument('--project', type=str, default="dl_action_recognition")
+    parser.add_argument('--notes', type=str, default='')
+    parser.add_argument('--wandb_ckpt', action='store_true')
+    parser.add_argument('--save_loss_steps', type=int, default=10)
+
+    return parser.parse_args()
 
 def evaluate(model, data_loader, criterion, metrics, args):
     

@@ -90,7 +90,7 @@ def train(model, train_loader, criterion, optimizer, scheduler, wandb_logger, st
 
                 wandb_logger._wandb.log({'train/loss': loss_avg()}, commit=False)
                 wandb_logger._wandb.log({'train/lr': get_lr(optimizer)}, commit=False)
-                wandb_logger._wandb.log({'global_step': it})
+                wandb_logger._wandb.log({'trainer/global_step': it})
 
             t.set_postfix(loss='{:05.3f}'.format(loss_avg()))
             t.update()
@@ -123,24 +123,19 @@ def train_and_valid(epochs, model, train_loader, val_loader, criterion,  optimiz
             wandb_logger._wandb.log({
                                     'val/loss': val_loss,
                                     'val/acc': val_acc,
-                                    'epoch': epoch + 1,
-                                     })
+                                    'trainer/epoch': epoch + 1,
+                                     },
+                                     commit=False) # Let's the train loop commit
 
-        
         # Logging
         is_best = val_acc >= best_val_acc
         if is_best:
             print("- Found new best accuracy performance")
 
-        # Save the last
-        l_json_path = os.path.join(ckp_dir, 'metrics_val_last_weights.json')
-        utils.save_dict_to_json({'val_acc':val_acc}, l_json_path) 
-
-       
         # Checkpoint saving
         utils.save_checkpoint({'epoch': epoch + 1,
                                 'state_dict': model.state_dict(),
-                                'optim_dict': optimizer.state_dict()},
+                                'optim_dict': optimizer.state_dict(),},
                                 is_best=is_best,
                                 checkpoint=ckp_dir)
 
@@ -149,23 +144,18 @@ def train_and_valid(epochs, model, train_loader, val_loader, criterion,  optimiz
             best_val_acc = val_acc
 
             b_json_path = os.path.join(ckp_dir, 'metrics_val_best_weights.json')
-
             utils.save_dict_to_json({'val_acc':val_acc}, b_json_path)
 
+        # Save the last
+        l_json_path = os.path.join(ckp_dir, 'metrics_val_last_weights.json')
+        utils.save_dict_to_json({'val_acc':val_acc}, l_json_path) 
 
-
-    # Save artifact wandb
+    #Finish the train and val loop and save artifact wandb
     if wandb_logger and args.wandb_ckpt and args.ckp_dir:
+        wandb_logger._wandb.log({})  # Commit the last
+        
+        wandb_logger.log_info()
         wandb_logger.log_checkpoints()
-
-        # wandb.log(
-        # {
-        #     "Epoch": epoch + 1,
-        #     "Learning Rate": current_lr,
-        #     "Train Loss": train_loss,
-        #     "Val Loss": val_loss,
-        #     "Val Acc" :val_acc,
-        # })
 
 if __name__ == '__main__':
 
@@ -178,11 +168,6 @@ if __name__ == '__main__':
     # set everything
     seed_everything(seed=73)
 
-    # Wandb logger init
-    if args.enable_wandb:
-        wandb_logger = utils.WandbLogger(args)
-    else:
-        wandb_logger = None
 
     # Get data wrapper
     data_wrapper = ActionRecognitionDataWrapper(**dict_args, 
@@ -210,6 +195,12 @@ if __name__ == '__main__':
     # Optimizer vs scheduler
     optimizer = torch.optim.Adam(params = net.parameters(), lr=args.lr)
     scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma = args.sl_gammar)
+
+    # Wandb logger init
+    if args.enable_wandb:
+        wandb_logger = utils.WandbLogger(args)
+    else:
+        wandb_logger = None
 
     # Training
     train_and_valid(epochs=args.max_epochs, 
