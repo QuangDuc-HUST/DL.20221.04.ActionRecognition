@@ -1,12 +1,19 @@
 #
 # For evaluate valset and test set
 #
-
+import os
 import argparse
 
 from tqdm import tqdm
 
 import torch
+from torch import nn
+
+from model.lrcn import LRCN
+from model.c3d import C3D
+from model.data_loader import ActionRecognitionDataWrapper 
+
+import utils
 
 def get_arg_parser():
 
@@ -15,6 +22,8 @@ def get_arg_parser():
     # PROGRAM level args
     parser.add_argument('--data_dir', type=str, required=True)
     parser.add_argument('--ckp_dir', type=str, default='./ckp/baseline')
+    parser.add_argument('--restore_file',type=str, default='best.pth')
+
 
     # DataModule specific args
     parser.add_argument('--dataset', type=str, required=True, choices=['hmdb51', 'ucf101'])
@@ -22,12 +31,21 @@ def get_arg_parser():
     parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--num_workers', type=int, default=2)
 
+
+    # Module specific args
+    ## which model to use
+    parser.add_argument('--model_name', type=str, required=True, choices=["lrcn", "c3d"])
+
+    ## Get the model name now 
+    temp_args, _ = parser.parse_known_args()
+
+    if temp_args.model_name == "lrcn":
+        parser = LRCN.add_model_specific_args(parser)
+    elif temp_args.model_name == "c3d":
+        parser = C3D.add_model_specific_args(parser)
+
     # Wandb specific args
     parser.add_argument('--enable_wandb', action='store_true')
-    parser.add_argument('--project', type=str, default="dl_action_recognition")
-    parser.add_argument('--notes', type=str, default='')
-    parser.add_argument('--wandb_ckpt', action='store_true')
-    parser.add_argument('--save_loss_steps', type=int, default=10)
 
     return parser.parse_args()
 
@@ -70,5 +88,47 @@ if __name__ == '__main__':
     """
     Evaluation for test set
     """
+    # Get parser argument
+    args = get_arg_parser()
+    # get training device
+    args.device = utils.get_training_device()
+    dict_args = vars(args)
 
+    # set everything
+    utils.seed_everything(seed=73)
+
+
+    # Get data wrapper
+    data_wrapper = ActionRecognitionDataWrapper(**dict_args, 
+                                                transforms=utils.get_transforms())
     
+    # Get test loader
+    test_loader = data_wrapper.get_test_dataloader()
+
+    # Get NUM_CLASSES
+    if args.dataset == 'hmdb51':
+        NUM_CLASSES = 51
+    else:
+        NUM_CLASSES = 101
+
+    # Get model 
+    if args.model_name == "lrcn":
+        net = LRCN(**dict_args,
+                    n_class=NUM_CLASSES)
+    elif args.model_name == "c3d":
+        net = C3D(**dict_args,
+                    n_class=NUM_CLASSES)
+    net.to(args.device)
+
+    # Loss functions
+    criterion = nn.CrossEntropyLoss() 
+
+    # Load weights
+    utils.load_checkpoint(os.path.join(args.ckp_dir, args.restore_file), net)
+
+    # Evaluate
+    _, test_acc = evaluate(net, test_loader, criterion, utils.acc_metrics, args)
+
+    json_path = os.path.join(args.ckp_dir, 'metrics_test.json')
+    utils.save_dict_to_json({'test_acc':test_acc}, json_path)
+    print(f"Save metrics to {json_path}")
