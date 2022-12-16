@@ -1,7 +1,6 @@
 #
 # For evaluate valset and test set
 #
-
 from tqdm import tqdm
 
 import torch
@@ -39,3 +38,11 @@ def evaluate(model, data_loader, criterion, metrics, args):
     print(f'Eval loss: {loss_mean:05.3f} ... Eval acc: {acc_mean:05.3f}')
 
     return loss_mean, acc_mean
+
+
+if __name__ == '__main__':
+    """
+    Evaluation for test set
+    """
+
+    

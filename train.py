@@ -86,7 +86,7 @@ def train(model, train_loader, criterion, optimizer, scheduler, wandb_logger, st
         
             loss_avg.update(loss.item())
 
-            if wandb_logger and it  % args.save_loss_steps:
+            if wandb_logger and it  % args.save_loss_steps == 0:
 
                 wandb_logger._wandb.log({'train/loss': loss_avg()}, commit=False)
                 wandb_logger._wandb.log({'lr/loss': get_lr(optimizer)}, commit=False)
@@ -109,8 +109,6 @@ def train_and_valid(epochs, model, train_loader, val_loader, criterion,  optimiz
     if wandb_logger:
         wandb_logger.set_steps()
 
-    # torch.cuda.empty_cache()
-    
     best_val_acc = 0.0 
 
     for epoch in range(epochs):
@@ -122,34 +120,38 @@ def train_and_valid(epochs, model, train_loader, val_loader, criterion,  optimiz
         val_loss, val_acc = evaluate(model, val_loader, criterion, acc_metrics, args)
 
         if wandb_logger:
-            wandb_logger._wandb.log_dict({
-                                        'val/loss': val_loss,
-                                        'val/acc': val_acc,
-                                        'epoch': epoch + 1,
-            })
+            wandb_logger._wandb.log({
+                                    'val/loss': val_loss,
+                                    'val/acc': val_acc,
+                                    'epoch': epoch + 1,
+                                     })
 
         
         # Logging
         is_best = val_acc >= best_val_acc
+        if is_best:
+            print("- Found new best accuracy performance")
+
         # Save the last
         l_json_path = os.path.join(ckp_dir, 'metrics_val_last_weights.json')
         utils.save_dict_to_json({'val_acc':val_acc}, l_json_path) 
 
-        # Save the best
-        if is_best:
-            print("- Found new best accuracy performance")
-            best_val_acc = val_acc
-
-            b_json_path = os.path.join(ckp_dir, 'metrics_val_best_weights.json')
-
-            utils.save_dict_to_json({'val_acc':val_acc}, b_json_path)
-
+       
         # Checkpoint saving
         utils.save_checkpoint({'epoch': epoch + 1,
                                 'state_dict': model.state_dict(),
                                 'optim_dict': optimizer.state_dict()},
                                 is_best=is_best,
                                 checkpoint=ckp_dir)
+
+        # Save the best
+        if is_best:
+            best_val_acc = val_acc
+
+            b_json_path = os.path.join(ckp_dir, 'metrics_val_best_weights.json')
+
+            utils.save_dict_to_json({'val_acc':val_acc}, b_json_path)
+
 
 
     # Save artifact wandb

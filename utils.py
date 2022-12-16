@@ -83,8 +83,8 @@ class WandbLogger():
     
     def set_steps(self):
 
-        self._wandb.define_metric('global_step')
         self._wandb.define_metric('epoch')
+        self._wandb.define_metric('global_step')
 
         self._wandb.define_metric('train/*', step_metric='global_step')
         self._wandb.define_metric('val/*', step_metric='epoch')
@@ -95,7 +95,7 @@ class WandbLogger():
         ckp_dir = self.args.ckp_dir
 
         model_artifact = self._wandb.Artifact(
-            self._wandb.name + '_model', type='model'
+            self._wandb.run.name + '_model', type='model'
         )
 
         model_artifact.add_dir(ckp_dir)
@@ -146,8 +146,6 @@ def save_checkpoint(state, is_best, checkpoint):
     if not os.path.exists(checkpoint):
         print("Checkpoint Directory does not exist! Making directory {}".format(checkpoint))
         os.makedirs(checkpoint)
-    else:
-        print("Checkpoint Directory exists! ")
     
     print(f"Saving checkpoint...")
     torch.save(state, file_path)
