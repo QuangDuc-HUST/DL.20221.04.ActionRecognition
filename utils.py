@@ -99,7 +99,7 @@ class WandbLogger():
 
         model_artifact.add_dir(ckp_dir)
 
-        self._wandb.log_artifact(model_artifact, aliases=["latest", "best"])
+        self._wandb.log_artifact(model_artifact, aliases=["latest"])
         
     def log_info(self):
         
@@ -110,12 +110,40 @@ class WandbLogger():
 
         dict_info = { 'id': self._wandb.run.id,
                       'path': self._wandb.run.path,
-                      'url': self._wandb.run.url
+                      'url': self._wandb.run.url,
+                      'artifact_path': self._wandb.run.path + '_model:latest'   # Update the lastest :D
                     }
         # Write
         with open(wandb_log_json_path, 'w') as f:  
-            json.dump(dict_info, wandb_log_json_path, indent=4)
+            json.dump(dict_info, f, indent=4)
+
+    @staticmethod
+    def save_metrics(metrics, args):
+        """
+        Update the run summary and upload test metrics into the artifact
+        """    
+        #get wandb_info
+        with open(os.path.join(args.ckp_dir, 'wandb_info.json')) as f:
+            wandb_info = json.load(f)
+            
+
+        import wandb
+        # get API
+        api = wandb.Api()
+        # get run
+        wandb_run = api.run(wandb_info['path'])
+
+        for metric, value in metrics.items():
+            wandb_run.summary[metric] = value
         
+        wandb_run.summary.update()
+
+        # artifact update
+        artifact = wandb_run.use_artifact(wandb_info['artifact_path'])
+        artifact.add_file(os.path.join(args.ckp_dir, 'metrics_test.json'))
+
+        wandb_run.log_artifact(artifact)
+
 
 def runcmd(cmd, is_wait=False, *args, **kwargs):
     # function for running command
@@ -190,7 +218,7 @@ def load_checkpoint(checkpoint, model, optimizer=None):
 
 def get_training_device():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print("We are training on", device)
+    print("We are on", device, "..")
     return device
 
 def acc_metrics(preds, targets):

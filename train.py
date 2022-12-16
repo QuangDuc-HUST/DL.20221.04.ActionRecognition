@@ -204,16 +204,16 @@ if __name__ == '__main__':
 
     # Training
     train_and_valid(epochs=args.max_epochs, 
-              model=net, 
-              train_loader=data_wrapper.get_train_dataloader(), 
-              val_loader=data_wrapper.get_val_dataloader(), 
-              criterion=criterion, 
-              optimizer=optimizer, 
-              scheduler=scheduler, 
-              wandb_logger=wandb_logger,
-              ckp_dir=args.ckp_dir,
-              args=args
-              )
+                    model=net, 
+                    train_loader=data_wrapper.get_train_dataloader(), 
+                    val_loader=data_wrapper.get_val_dataloader(), 
+                    criterion=criterion, 
+                    optimizer=optimizer, 
+                    scheduler=scheduler, 
+                    wandb_logger=wandb_logger,
+                    ckp_dir=args.ckp_dir,
+                    args=args
+                    )
 
     # Finish wandb
     if wandb_logger:

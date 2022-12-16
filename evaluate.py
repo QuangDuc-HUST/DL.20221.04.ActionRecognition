@@ -14,6 +14,7 @@ from model.c3d import C3D
 from model.data_loader import ActionRecognitionDataWrapper 
 
 import utils
+from utils import WandbLogger
 
 def get_arg_parser():
 
@@ -128,7 +129,13 @@ if __name__ == '__main__':
 
     # Evaluate
     _, test_acc = evaluate(net, test_loader, criterion, utils.acc_metrics, args)
+    test_metrics = {'test_acc':test_acc}
 
     json_path = os.path.join(args.ckp_dir, 'metrics_test.json')
-    utils.save_dict_to_json({'test_acc':test_acc}, json_path)
+    utils.save_dict_to_json(test_metrics, json_path)
     print(f"Save metrics to {json_path}")
+
+
+    if args.enable_wandb:
+        print("Log to results to wandb...")
+        WandbLogger.save_metrics(test_metrics, args)
