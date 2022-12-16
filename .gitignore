@@ -5,6 +5,9 @@ wandb/*
 *.pt
 *.pth
 
+# json logging
+ckp/*.json
+
 # data
 data/UCF101/*
 data/HMDB51/*

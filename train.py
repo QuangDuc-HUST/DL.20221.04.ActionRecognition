@@ -36,7 +36,6 @@ def get_arg_parser():
     parser.add_argument('--num_workers', type=int, default=2)
 
     # hyperparameters specific args
-    parser.add_argument('--save_summary_steps', type=int, default=10) ## Just like pytorch lightning
     parser.add_argument('--max_epochs', type=int, default=5)
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--sl_gammar', type=float, default=0.999)
@@ -53,15 +52,26 @@ def get_arg_parser():
     elif temp_args.model_name == "c3d":
         parser = C3D.add_model_specific_args(parser)
 
+    # Wandb specific args
+    parser.add_argument('--enable_wandb', action='store_true')
+    parser.add_argument('--project', type=str, default="dl_action_recognition")
+    parser.add_argument('--notes', type=str, default='')
+    parser.add_argument('--wandb_ckpt', action='store_true')
+    parser.add_argument('--save_loss_steps', type=int, default=10)
+
+
     return parser.parse_args()
 
-def train(model, train_loader, criterion, optimizer, scheduler, args):
+def train(model, train_loader, criterion, optimizer, scheduler, wandb_logger, start_steps, args):
     
     model.train() 
     loss_avg = utils.RunningAverage()
 
     with tqdm(total=len(train_loader)) as t:
-        for i , data in enumerate(train_loader):
+        for step , data in enumerate(train_loader):
+
+            it = start_steps + step          # current global step
+
             image, label = data
             
             image = image.to(args.device, non_blocking=True)
@@ -78,8 +88,11 @@ def train(model, train_loader, criterion, optimizer, scheduler, args):
         
             loss_avg.update(loss.item())
 
-            if i  % args.save_summary_steps:
-                pass
+            if wandb_logger and it  % args.save_loss_steps:
+
+                wandb_logger._wandb.log({'train/loss': loss_avg()}, commit=False)
+                wandb_logger._wandb.log({'lr/loss': get_lr(optimizer)}, commit=False)
+                wandb_logger._wandb.log({'global_step': it})
 
             t.set_postfix(loss='{:05.3f}'.format(loss_avg()))
             t.update()
@@ -93,88 +106,33 @@ def train(model, train_loader, criterion, optimizer, scheduler, args):
     print("Learning Rate: {}..".format(current_lr),
           "Train Loss: {:.3f}..".format(loss_avg()))
 
-    return loss_avg(), current_lr
+def train_and_valid(epochs, model, train_loader, val_loader, criterion,  optimizer, scheduler, ckp_dir, wandb_logger, args):
 
-
-def train_and_valid(epochs, model, train_loader, val_loader, criterion,  optimizer, scheduler, ckp_dir, wandb_init, args):
-        
-    # wandb
-    wandb.login(anonymous="must")
-    wandb.init(**wandb_init)
+    if wandb_logger:
+        wandb_logger.set_steps()
 
     # torch.cuda.empty_cache()
     
     best_val_acc = 0.0 
 
-    for e in range(epochs):
+    for epoch in range(epochs):
         
-        print("Epoch {}/{}".format(e + 1, epochs))
+        print("Epoch {}/{}".format(epoch + 1, epochs))
         
-        #training phase
-        # model.train() 
-        # loss_avg = utils.RunningAverage()
-        # with tqdm(total=len(train_loader)) as t:
-        #     for i , data in enumerate(train_loader):
-        #         image, label = data
-                
-        #         image = image.to(args.device, non_blocking=True)
-        #         label = label.to(args.device, non_blocking=True)
-                
-        #         #forward
-        #         output = model(image)
-        #         loss = criterion(output, label)
-                
-        #         #backward
-        #         loss.backward()
-        #         optimizer.step() #update weight          
-        #         optimizer.zero_grad() #reset gradient
-            
-        #         loss_avg.update(loss.item())
+        train(model, train_loader, criterion, optimizer, scheduler, wandb_logger, epoch* len(train_loader), args)
 
-        #         if i  % args.save_summary_steps:
-        #             pass
-
-        #         t.set_postfix(loss='{:05.3f}'.format(loss_avg()))
-        #         t.update()
-
-        train_loss, current_lr = train(model, train_loader, criterion, optimizer, scheduler, args)
-
-        # model.eval()    
-        # val_loss = 0
-        # val_acc = 0
-        # with tqdm(total=len(val_loader)) as t:
-        #     with torch.no_grad():
-        #         for _, data in enumerate(val_loader):
-        #             image, label= data
-                    
-        #             image = image.to(args.device, non_blocking=True) 
-        #             label = label.to(args.device, non_blocking=True)
-                    
-        #             output = model(image)
-        #             #loss
-        #             loss = criterion(output, label)
-        #             #evaluation metrics
-        #             val_acc += acc_metrics(output, label)
-                    
-        #             val_loss += loss.item()
-
-        #             t.update()
-
-        
         val_loss, val_acc = evaluate(model, val_loader, criterion, acc_metrics, args)
 
-        is_best = val_acc >= best_val_acc
+        if wandb_logger:
+            wandb_logger._wandb.log_dict({
+                                        'val/loss': val_loss,
+                                        'val/acc': val_acc,
+                                        'epoch': epoch + 1,
+            })
 
-        # Checkpoint saving
-
-        utils.save_checkpoint({'epoch': e + 1,
-                                'state_dict': model.state_dict(),
-                                'optim_dict': optimizer.state_dict()},
-                                is_best=is_best,
-                                checkpoint=ckp_dir)
-
+        
         # Logging
-
+        is_best = val_acc >= best_val_acc
         # Save the last
         l_json_path = os.path.join(ckp_dir, 'metrics_val_last_weights.json')
         utils.save_dict_to_json({'val_acc':val_acc}, l_json_path) 
@@ -188,27 +146,21 @@ def train_and_valid(epochs, model, train_loader, val_loader, criterion,  optimiz
 
             utils.save_dict_to_json({'val_acc':val_acc}, b_json_path)
 
-       
+        # Checkpoint saving
+        utils.save_checkpoint({'epoch': epoch + 1,
+                                'state_dict': model.state_dict(),
+                                'optim_dict': optimizer.state_dict()},
+                                is_best=is_best,
+                                checkpoint=ckp_dir)
 
-        wandb.log(
-        {
-            "Epoch": e + 1,
-            "Learning Rate": current_lr,
-            "Train Loss": train_loss,
-            "Val Loss": val_loss,
-            "Val Acc" :val_acc,
-        })
-
-
-        print("Learning Rate: {}".format(current_lr),
-              "Train Loss: {:.3f}..".format(train_loss),
-              "Val Loss: {:.3f}..".format(val_loss),
-              "Val Acc: {:.3f}..".format(val_acc)
-                )
-        
-
-       
-            
+        # wandb.log(
+        # {
+        #     "Epoch": epoch + 1,
+        #     "Learning Rate": current_lr,
+        #     "Train Loss": train_loss,
+        #     "Val Loss": val_loss,
+        #     "Val Acc" :val_acc,
+        # })
 
     wandb.finish()
 
@@ -223,18 +175,11 @@ if __name__ == '__main__':
     # set everything
     seed_everything(seed=73)
 
-     # Wandb settings
-    WANDB_NOTE = "Test colab"
-    wandb_init =  {
-                "project":"DL-Recognition", 
-                "notes": WANDB_NOTE,
-                "config": {
-                      "architecture": "LCRN",
-                      "optimizers and schedulers": "adam, explr",
-                      **dict_args
-                      }
-    }
-
+    # Wandb logger init
+    if args.enable_wandb:
+        wandb_logger = utils.WandbLogger(args)
+    else:
+        wandb_logger = None
 
     # Get data wrapper
     data_wrapper = ActionRecognitionDataWrapper(**dict_args, 
@@ -271,7 +216,7 @@ if __name__ == '__main__':
               criterion=criterion, 
               optimizer=optimizer, 
               scheduler=scheduler, 
-              wandb_init=wandb_init,
+              wandb_logger=wandb_logger,
               ckp_dir=args.ckp_dir,
               args=args
               )

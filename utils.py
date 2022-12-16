@@ -62,6 +62,35 @@ class RunningAverage():
     def __call__(self):
         return self.total/float(self.steps)
 
+
+class WandbLogger():
+    def __init__(self, args):
+        self.args = args
+
+        import wandb
+        self._wandb = wandb
+
+
+        # Initialise a W&B run
+        if self._wandb.run is None:
+
+            self._wandb.login(anonymous='must')
+            self._wandb.init(
+                project=args.project,
+                notes=args.notes,
+                config=args
+            )
+    
+    def set_steps(self):
+
+        self._wandb.define_metric('global_step')
+        self._wandb.define_metric('epoch')
+        
+        self._wandb.define_metric('train/*', step_metric='global_step')
+        self._wandb.define_metric('val/*', step_metric='epoch')
+
+
+
 def runcmd(cmd, is_wait=False, *args, **kwargs):
     # function for running command
     process = subprocess.Popen(
@@ -103,11 +132,11 @@ def save_checkpoint(state, is_best, checkpoint):
 
     if not os.path.exists(checkpoint):
         print("Checkpoint Directory does not exist! Making directory {}".format(checkpoint))
-        os.mkdirs(checkpoint)
+        os.makedirs(checkpoint)
     else:
         print("Checkpoint Directory exists! ")
     
-    print(f"Saving checkpoint... {file_path}")
+    print(f"Saving checkpoint...")
     torch.save(state, file_path)
 
     if is_best:
