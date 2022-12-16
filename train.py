@@ -6,8 +6,6 @@ import os
 import argparse
 from tqdm import tqdm
 
-import wandb
-
 import torch
 from torch import nn
 
@@ -119,7 +117,7 @@ def train_and_valid(epochs, model, train_loader, val_loader, criterion,  optimiz
         
         print("Epoch {}/{}".format(epoch + 1, epochs))
         
-        train(model, train_loader, criterion, optimizer, scheduler, wandb_logger, epoch* len(train_loader), args)
+        train(model, train_loader, criterion, optimizer, scheduler, wandb_logger, epoch * len(train_loader), args)
 
         val_loss, val_acc = evaluate(model, val_loader, criterion, acc_metrics, args)
 
@@ -153,6 +151,11 @@ def train_and_valid(epochs, model, train_loader, val_loader, criterion,  optimiz
                                 is_best=is_best,
                                 checkpoint=ckp_dir)
 
+
+    # Save artifact wandb
+    if wandb_logger and args.wandb_ckpt and args.ckp_dir:
+        wandb_logger.log_checkpoints()
+
         # wandb.log(
         # {
         #     "Epoch": epoch + 1,
@@ -161,8 +164,6 @@ def train_and_valid(epochs, model, train_loader, val_loader, criterion,  optimiz
         #     "Val Loss": val_loss,
         #     "Val Acc" :val_acc,
         # })
-
-    wandb.finish()
 
 if __name__ == '__main__':
 
@@ -221,4 +222,6 @@ if __name__ == '__main__':
               args=args
               )
 
-
+    # Finish wandb
+    if wandb_logger:
+        wandb_logger._wandb.finish()

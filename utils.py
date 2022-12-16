@@ -85,10 +85,23 @@ class WandbLogger():
 
         self._wandb.define_metric('global_step')
         self._wandb.define_metric('epoch')
-        
+
         self._wandb.define_metric('train/*', step_metric='global_step')
         self._wandb.define_metric('val/*', step_metric='epoch')
 
+
+    def log_checkpoints(self):
+
+        ckp_dir = self.args.ckp_dir
+
+        model_artifact = self._wandb.Artifact(
+            self._wandb.name + '_model', type='model'
+        )
+
+        model_artifact.add_dir(ckp_dir)
+
+        self._wandb.log_artifact(model_artifact, aliases=["latest", "best"])
+        
 
 
 def runcmd(cmd, is_wait=False, *args, **kwargs):
