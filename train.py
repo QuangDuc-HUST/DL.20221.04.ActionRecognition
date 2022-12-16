@@ -89,7 +89,7 @@ def train(model, train_loader, criterion, optimizer, scheduler, wandb_logger, st
             if wandb_logger and it  % args.save_loss_steps == 0:
 
                 wandb_logger._wandb.log({'train/loss': loss_avg()}, commit=False)
-                wandb_logger._wandb.log({'lr/loss': get_lr(optimizer)}, commit=False)
+                wandb_logger._wandb.log({'train/lr': get_lr(optimizer)}, commit=False)
                 wandb_logger._wandb.log({'global_step': it})
 
             t.set_postfix(loss='{:05.3f}'.format(loss_avg()))
