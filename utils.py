@@ -134,16 +134,9 @@ class WandbLogger():
         wandb_run = api.run(wandb_info['path'])
 
         for metric, value in metrics.items():
-            wandb_run.summary[metric] = value
+            wandb_run.summary[f'test/{metric}'] = value
         
         wandb_run.summary.update()
-
-        # artifact update
-        artifact = wandb_run.use_artifact(wandb_info['artifact_path'])
-        artifact.add_file(os.path.join(args.ckp_dir, 'metrics_test.json'))
-
-        wandb_run.log_artifact(artifact)
-
 
 def runcmd(cmd, is_wait=False, *args, **kwargs):
     # function for running command

@@ -137,5 +137,5 @@ if __name__ == '__main__':
 
 
     if args.enable_wandb:
-        print("Log to results to wandb...")
+        print("Log to results to wandb summary ...")
         WandbLogger.save_metrics(test_metrics, args)
