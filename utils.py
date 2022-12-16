@@ -94,7 +94,7 @@ class WandbLogger():
         ckp_dir = self.args.ckp_dir
 
         model_artifact = self._wandb.Artifact(
-            self._wandb.run.name + '_model', type='model'
+            self._wandb.run.id + '_model', type='model'
         )
 
         model_artifact.add_dir(ckp_dir)
@@ -112,8 +112,9 @@ class WandbLogger():
                       'path': self._wandb.run.path,
                       'url': self._wandb.run.url
                     }
-                    
-        json.dump(dict_info, wandb_log_json_path, indent=4)
+        # Write
+        with open(wandb_log_json_path, 'w') as f:  
+            json.dump(dict_info, wandb_log_json_path, indent=4)
         
 
 def runcmd(cmd, is_wait=False, *args, **kwargs):
