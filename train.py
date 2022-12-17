@@ -116,6 +116,7 @@ def train(model, train_loader, criterion, optimizer, scheduler, wandb_logger, st
 def train_and_valid(epochs, model, train_loader, val_loader, criterion,  optimizer, scheduler, ckp_dir, wandb_logger, args):
 
     if wandb_logger:
+        wandb_logger.log_info() # Get wandb info
         wandb_logger.set_steps()
 
     best_val_acc = 0.0 
@@ -163,7 +164,6 @@ def train_and_valid(epochs, model, train_loader, val_loader, criterion,  optimiz
     if wandb_logger and args.wandb_ckpt and args.ckp_dir:
         wandb_logger._wandb.log({})  # Commit the last
         
-        wandb_logger.log_info()
         wandb_logger.log_checkpoints()
 
 if __name__ == '__main__':
