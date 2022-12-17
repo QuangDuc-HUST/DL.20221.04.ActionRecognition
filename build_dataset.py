@@ -36,11 +36,11 @@ def get_data_google_id(dataset, process_type):
 
 
 def get_data_kaggle_id(dataset, process_type):
-
+    
     DATASET_IDS = {
-    "ucf101_5_frames_uniform": "17DHqu9-ySzg0nh55QCGqT6gFd38UZDPR",
+    "ucf101_5_frames_uniform": "quangduc0703/hmdb51-5-uniform",
     "ucf101_16_frames_conse_rand": "1-6zxq5eV0NFLimoasGzztRT35q3LtepF",
-    "hmdb51_5_frames_uniform": "quangduc0703/hmdb51-5-uniform",
+    "hmdb51_5_frames_uniform": "",
     "hmdb51_16_frames_conse_rand": "1-AzbJDJ3KQdnnXSXLB8AuDisds4a5O_J",
     }
 
@@ -49,7 +49,7 @@ def get_data_kaggle_id(dataset, process_type):
 if __name__ == '__main__':
     args = get_dataset_arg()
 
-    if (args.google and args.kaggle) or (not args.google and not args.google):
+    if (args.google and args.kaggle) or (not args.kaggle and not args.google):
         raise("Please choose one google or kaggle for download.")
 
     if args.google and args.google_access_key == '':
