@@ -12,7 +12,7 @@ import numpy as np
 import torch 
 
 
-def get_transforms():
+def get_transforms(args):
 
     train_transforms = A.Compose(
         [

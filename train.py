@@ -47,8 +47,17 @@ def get_arg_parser():
 
     if temp_args.model_name == "lrcn":
         parser = LRCN.add_model_specific_args(parser)
+
+        # Data transform
+        parser.add_argument('--resize_to', type=int, default=256)   # 5 uni
+
     elif temp_args.model_name == "c3d":
         parser = C3D.add_model_specific_args(parser)
+
+        # Data transform
+        parser.add_argument('--resize_to', type=int, default=128)
+
+
 
     # Wandb specific args
     parser.add_argument('--enable_wandb', action='store_true')
@@ -171,7 +180,7 @@ if __name__ == '__main__':
 
     # Get data wrapper
     data_wrapper = ActionRecognitionDataWrapper(**dict_args, 
-                                                transforms=get_transforms())
+                                                transforms=get_transforms(args))
     
     # Get NUM_CLASSES
     if args.dataset == 'hmdb51':

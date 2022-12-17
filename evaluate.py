@@ -101,7 +101,7 @@ if __name__ == '__main__':
 
     # Get data wrapper
     data_wrapper = ActionRecognitionDataWrapper(**dict_args, 
-                                                transforms=utils.get_transforms())
+                                                transforms=utils.get_transforms(args))
     
     # Get test loader
     test_loader = data_wrapper.get_test_dataloader()
