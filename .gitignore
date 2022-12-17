@@ -3,6 +3,10 @@ wandb/*
 
 # weights 
 *.pt
+*.pth
+
+# json logging
+ckp/*.json
 
 # data
 data/UCF101/*
