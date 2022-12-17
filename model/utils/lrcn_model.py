@@ -39,7 +39,7 @@ class Pretrained_conv(nn.Module):
 
     def __init__(self, latent_dim):
         super(Pretrained_conv, self).__init__()
-        self.conv_model = models.resnet152(pretrain=True)
+        self.conv_model = models.resnet152(pretrained=True)
         # self.conv_model = models.resnet152(weights='DEFAULT')
         # ====== freezing all of the layers ======
         for param in self.conv_model.parameters():
