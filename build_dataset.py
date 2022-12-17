@@ -38,10 +38,10 @@ def get_data_google_id(dataset, process_type):
 def get_data_kaggle_id(dataset, process_type):
     
     DATASET_IDS = {
-    "ucf101_5_frames_uniform": "quangduc0703/hmdb51-5-uniform",
-    "ucf101_16_frames_conse_rand": "1-6zxq5eV0NFLimoasGzztRT35q3LtepF",
-    "hmdb51_5_frames_uniform": "",
-    "hmdb51_16_frames_conse_rand": "1-AzbJDJ3KQdnnXSXLB8AuDisds4a5O_J",
+    "ucf101_5_frames_uniform": "alas123dc/ucf101-5-uni",
+    "ucf101_16_frames_conse_rand": "alas123dc/ucf101-16-con-rand",
+    "hmdb51_5_frames_uniform": "alas123dc/hmdb51-5-uni",
+    "hmdb51_16_frames_conse_rand": "alas123dc/hmdb51-16-con-rand",
     }
 
     return DATASET_IDS[dataset + '_' + process_type]
