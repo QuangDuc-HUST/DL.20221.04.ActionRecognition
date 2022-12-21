@@ -56,7 +56,7 @@ def get_arg_parser():
         parser = C3D.add_model_specific_args(parser)
 
         # Data transform
-        parser.add_argument('--resize_to', type=int, default=128)
+        parser.add_argument('--resize_to', type=int, default=112)
 
 
 
