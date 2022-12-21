@@ -32,6 +32,7 @@ def get_arg_parser():
     parser.add_argument('--data_split', type=str, default='split1', choices=['split1', 'split2', 'split3'])
     parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--num_workers', type=int, default=2)
+    parser.add_argument('--clip_per_video', type=int, default=1)
 
     # hyperparameters specific args
     parser.add_argument('--max_epochs', type=int, default=5)

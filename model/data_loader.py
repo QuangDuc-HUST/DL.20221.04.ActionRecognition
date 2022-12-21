@@ -59,6 +59,7 @@ class ActionRecognitionDataWrapper():
                  transforms, 
                  batch_size, 
                  num_workers,
+                 clip_per_video,
                  *args, 
                  **kwargs):
 
@@ -68,13 +69,14 @@ class ActionRecognitionDataWrapper():
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.split = data_split
+        self.clip_per_video = clip_per_video
 
         self._setup()
 
+
     def _setup(self):
         
-        annotation_path = f'./data/{self.dataset.upper()}/annotation'
-        df_anno = pd.read_csv(os.path.join(annotation_path, 'train_test_split.csv'))
+        df_anno = self._get_annotation_pandas()
 
         # Train, Val
         df_anno_split = df_anno[['video_folder_path', self.split , 'label_id']]
@@ -103,7 +105,32 @@ class ActionRecognitionDataWrapper():
         self.test = ActionRecognitionDataset(self.data_dir, 
                                              df_test, 
                                              self.transforms['test_transforms'])
-        
+
+    def _get_annotation_pandas(self):
+        """
+        Get df based on number of clips per video
+        start from clip_1, clip_2, .. (if self.clip_per_video > 1)
+        or default
+
+        """
+        def _get_name_clip(name_clip):
+            """
+            Support function for pandas explore
+            
+            """
+            return [os.path.join(name_clip, f'clip_{x+1}') for x in range(self.clip_per_video)]
+
+
+        annotation_folder = f'./data/{self.dataset.upper()}/annotation/'
+        default_df = pd.read_csv(os.path.join(annotation_folder, 'train_test_split.csv'))
+
+        if self.clip_per_video <= 1:
+            return default_df
+        else:
+            default_df['video_folder_path'] = default_df['video_folder_path'].apply(_get_name_clip)
+            return_df = default_df.explode('video_folder_path').reset_index()
+            del return_df['index']  #reset index
+            return return_df
     
     def get_train_dataloader(self):
         return DataLoader(self.train, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True)
