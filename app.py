@@ -23,6 +23,7 @@ async def lrcn_upload_file(
     file: UploadFile= File()
     ):
 
+    res = None
     agrs = {
         'model_name': model_name,
         'latent_dim': latent_dim,
@@ -64,6 +65,7 @@ async def c3d_upload_file(
     file: UploadFile= File()
     ):
 
+    res = None
     agrs = {
         'model_name': model_name,
         'drop_out': drop_out,
