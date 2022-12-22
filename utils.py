@@ -91,6 +91,8 @@ class WandbLogger():
 
     def log_checkpoints(self):
 
+        print("Uploading checkpoints to wandb ...")
+
         ckp_dir = self.args.ckp_dir
 
         model_artifact = self._wandb.Artifact(

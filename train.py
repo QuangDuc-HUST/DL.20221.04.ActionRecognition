@@ -13,7 +13,7 @@ from model.lrcn import LRCN
 from model.c3d import C3D
 from model.data_loader import ActionRecognitionDataWrapper 
 
-from evaluate import evaluate
+from evaluate import val_evaluate
 
 import utils
 from utils import seed_everything, get_training_device, acc_metrics, get_lr, get_transforms
@@ -66,6 +66,7 @@ def get_arg_parser():
     parser.add_argument('--notes', type=str, default='')
     parser.add_argument('--wandb_ckpt', action='store_true')
     parser.add_argument('--save_loss_steps', type=int, default=10)
+    parser.add_argument('--save_ckp_epochs', type=int, default=0)   #default is not 
 
 
     return parser.parse_args()
@@ -128,7 +129,7 @@ def train_and_valid(epochs, model, train_loader, val_loader, criterion,  optimiz
         
         train(model, train_loader, criterion, optimizer, scheduler, wandb_logger, epoch * len(train_loader), args)
 
-        val_loss, val_acc = evaluate(model, val_loader, criterion, acc_metrics, args)
+        val_loss, val_acc = val_evaluate(model, val_loader, criterion, acc_metrics, args)
 
         if wandb_logger:
             wandb_logger._wandb.log({
@@ -144,7 +145,7 @@ def train_and_valid(epochs, model, train_loader, val_loader, criterion,  optimiz
             print("- Found new best accuracy performance")
 
         # Checkpoint saving
-        utils.save_checkpoint({'epoch': epoch + 1,
+        utils.save_checkpoint({ 'epoch': epoch + 1,
                                 'state_dict': model.state_dict(),
                                 'optim_dict': optimizer.state_dict(),},
                                 is_best=is_best,
@@ -160,6 +161,11 @@ def train_and_valid(epochs, model, train_loader, val_loader, criterion,  optimiz
         # Save the last
         l_json_path = os.path.join(ckp_dir, 'metrics_val_last_weights.json')
         utils.save_dict_to_json({'val_acc':val_acc}, l_json_path) 
+
+        # Upload checkpoint periodically
+        if wandb_logger and args.save_ckp_epochs and not epoch % args.save_ckp_epochs:
+            wandb_logger.log_checkpoints()
+
 
     #Finish the train and val loop and save artifact wandb
     if wandb_logger and args.wandb_ckpt and args.ckp_dir:

@@ -9,9 +9,10 @@ from sklearn import model_selection
 import torch
 from torch.utils.data import Dataset, DataLoader
 
-
 class ActionRecognitionDataset(Dataset):
-    
+    """
+    Dataset class for training and validation stage
+    """
     def __init__(self, data_dir, df_train_test_split, transform):
 
         self.data_dir = data_dir
@@ -34,24 +35,60 @@ class ActionRecognitionDataset(Dataset):
         
         return img
     
+    def _read_one_clip(self, folder_path):
+        
+        lst_imgs = sorted(os.listdir(folder_path))
+        
+        imgs = torch.stack([self._read_image(os.path.join(folder_path, path)) for path \
+                            in lst_imgs],
+                           dim=0)
+
+        return imgs
+
+    def __getitem__(self, idx):
+        
+        clip_path, _, label = self.df.iloc[idx]
+        
+        full_clip_path = self._get_full_path(clip_path)
+
+        imgs = self._read_one_clip(full_clip_path)
+        
+        label = torch.tensor(label).long()
+        
+        return imgs, label
+
+class ActionRecognitionDatasetTest(ActionRecognitionDataset):
+    """
+    Dataset class for test stage
+    """
+
+    def __init__(self, data_dir, df_train_test_split, transform, clip_per_video):
+        super().__init__(data_dir, df_train_test_split, transform)
+        self.clip_per_video = clip_per_video
+
     def __getitem__(self, idx):
         
         video_path, _, label = self.df.iloc[idx]
         
         video_path = self._get_full_path(video_path)
 
-        lst_imgs = sorted(os.listdir(video_path))
+        if self.clip_per_video <= 1:
+            clip_path = video_path
+            imgs = self._read_one_clip(clip_path)
         
-        imgs = torch.stack([self._read_image(os.path.join(video_path, path)) for path \
-                            in lst_imgs],
-                           dim=0)
-        
+        else:
+            clip_paths = os.listdir(video_path)
+            imgs = torch.stack([self._read_one_clip(os.path.join(video_path, path)) for path in clip_paths],
+                                dim=0)
+
         label = torch.tensor(label).long()
-        
         return imgs, label
 
-class ActionRecognitionDataWrapper():
 
+class ActionRecognitionDataWrapper():
+    """
+    Class for generating dataloader for train, validation, and test set 
+    """
     def __init__(self, 
                  data_dir, 
                  dataset, 
@@ -76,12 +113,10 @@ class ActionRecognitionDataWrapper():
 
     def _setup(self):
         
-        df_anno = self._get_annotation_pandas()
+        df_anno_train_val, df_anno_test = self._get_annotation_pandas()
 
         # Train, Val
-        df_anno_split = df_anno[['video_folder_path', self.split , 'label_id']]
-        df_train_val = df_anno_split[df_anno_split[self.split] == 'train']
-        
+        df_train_val = df_anno_train_val[['video_folder_path', self.split , 'label_id']]
 
         df_train, df_val = model_selection.train_test_split(df_train_val, 
                                                             train_size=0.8, 
@@ -89,7 +124,7 @@ class ActionRecognitionDataWrapper():
 
 
         # Test
-        df_test = df_anno_split[df_anno_split[self.split] == 'test']
+        df_test = df_anno_test[['video_folder_path', self.split , 'label_id']]
         
 
         
@@ -102,9 +137,10 @@ class ActionRecognitionDataWrapper():
                                             df_val, 
                                             self.transforms['val_transforms'])
 
-        self.test = ActionRecognitionDataset(self.data_dir, 
+        self.test = ActionRecognitionDatasetTest(self.data_dir, 
                                              df_test, 
-                                             self.transforms['test_transforms'])
+                                             self.transforms['test_transforms'],
+                                             self.clip_per_video)
 
     def _get_annotation_pandas(self):
         """
@@ -124,13 +160,15 @@ class ActionRecognitionDataWrapper():
         annotation_folder = f'./data/{self.dataset.upper()}/annotation/'
         default_df = pd.read_csv(os.path.join(annotation_folder, 'train_test_split.csv'))
 
-        if self.clip_per_video <= 1:
-            return default_df
-        else:
-            default_df['video_folder_path'] = default_df['video_folder_path'].apply(_get_name_clip)
-            return_df = default_df.explode('video_folder_path').reset_index()
-            del return_df['index']  #reset index
-            return return_df
+        train_val_df = default_df[default_df[self.split] == 'train'].copy(deep=True)
+        test_df = default_df[default_df[self.split] == 'test'].copy(deep=True)
+
+        if self.clip_per_video > 1:
+            train_val_df['video_folder_path'] = train_val_df['video_folder_path'].apply(_get_name_clip)
+            train_val_df = train_val_df.explode('video_folder_path').reset_index()
+            del train_val_df['index']  #reset index
+
+        return train_val_df, test_df
     
     def get_train_dataloader(self):
         return DataLoader(self.train, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True)
