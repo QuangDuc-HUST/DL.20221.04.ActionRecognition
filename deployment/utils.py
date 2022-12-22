@@ -4,7 +4,6 @@ from model.c3d import C3D
 import utils
 import cv2
 import torch
-import glob
 import albumentations as A
 import os
 import random
@@ -34,20 +33,17 @@ def get_model(args):
     else:
         ARTIFACT_NAME = ARTIFACT_NAME_C3D
 
-    run = wandb.init(project="dl_action_recognition", entity="dandl", anonymous='allow')
-    try:
-        artifact = run.use_artifact(f'dandl/dl_action_recognition/{ARTIFACT_NAME}:v0', type='model')
+    ## Un-comment when not have model weights 
+    # run = wandb.init(project="dl_action_recognition", entity="dandl", anonymous='allow')
+    # try:
+    #     artifact = run.use_artifact(f'dandl/dl_action_recognition/{ARTIFACT_NAME}:v0', type='model')
 
-        print('Download started..')
-        model = artifact.get_path(MODEL_FILE).download()
-        print('Download completed!')
-    except Exception as e:
-        print(traceback.format_exc()) 
-    run.finish()
-    
-
-    # args['device'] = utils.get_training_device()
-    # dict_args = vars(args)
+    #     print('Download started..')
+    #     model = artifact.get_path(MODEL_FILE).download()
+    #     print('Download completed!')
+    # except Exception as e:
+    #     print(traceback.format_exc()) 
+    # run.finish()
 
     # set everything
     utils.seed_everything(seed=73)
@@ -148,6 +144,7 @@ def extract_frames_from_videos_c3d(video_path, args, sequence_length=16):
 def predict(input, args):
 
     args = get_default_agr(args)
+    print(args)
 
     if args['model_name'] == 'lrcn':
         inputs = extract_frames_from_videos_lrcn(input, args)
