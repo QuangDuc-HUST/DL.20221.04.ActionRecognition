@@ -109,7 +109,7 @@ def test_evaluate(model, test_data_loader, metrics, args):
                     label = label.to(args.device, non_blocking=True)
 
                     #forward
-                    output = torch.softmax(model(clip))
+                    output = torch.softmax(model(clip), dim=1)
                 
                 else:
                     outputs = []
