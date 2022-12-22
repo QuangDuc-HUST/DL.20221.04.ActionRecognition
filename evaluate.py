@@ -8,6 +8,7 @@ from tqdm import tqdm
 
 import torch
 from torch import nn
+import torch.nn.functional as F
 
 from model.lrcn import LRCN
 from model.c3d import C3D
@@ -59,7 +60,7 @@ def get_arg_parser():
 
     return parser.parse_args()
 
-def evaluate(model, data_loader, criterion, metrics, args):
+def val_evaluate(model, data_loader, criterion, metrics, args):
     
     model.eval()
 
@@ -89,9 +90,51 @@ def evaluate(model, data_loader, criterion, metrics, args):
     acc_mean = acc_summ / len(data_loader)
     loss_mean = loss_summ / len(data_loader)
     
-    print(f'Eval loss: {loss_mean:05.3f} ... Eval acc: {acc_mean:05.3f}')
+    print(f'Val loss: {loss_mean:05.3f} ... Val acc: {acc_mean:05.3f}')
 
     return loss_mean, acc_mean
+
+def test_evaluate(model, test_data_loader, metrics, args):
+    
+    model.eval()
+
+    acc_summ = 0
+
+    with torch.no_grad():
+        with tqdm(total=len(test_data_loader)) as t:
+            for data in test_data_loader:
+                clip, label = data
+                if args.clip_per_video <= 1:
+                        
+                    clip = clip.to(args.device, non_blocking=True)
+                    label = label.to(args.device, non_blocking=True)
+
+                    #forward
+                    output = F.sigmoid(model(clip))
+                
+                else:
+                    outputs = []
+                    clip, label = data
+                    label = label.to(args.device, non_blocking=True)
+                    for i in range(args.clip_per_video):
+                        
+                        clip = clip[:,i,:,:,:].to(args.device, non_blocking=True)
+                        #forward
+                        outputs.append(F.sigmoid(model(clip)))
+                    
+                    outputs = torch.stack(outputs, dim=0)
+                    output = torch.mean(outputs, dim=0)
+
+                acc = metrics(output, label)
+                acc_summ += acc.item()
+
+                t.update()
+
+    acc_mean = acc_summ / len(test_data_loader)
+    
+    print(f'Test acc: {acc_mean:05.3f}')
+
+    return acc_mean
 
 
 if __name__ == '__main__':
@@ -137,7 +180,7 @@ if __name__ == '__main__':
     utils.load_checkpoint(os.path.join(args.ckp_dir, args.restore_file), net)
 
     # Evaluate
-    _, test_acc = evaluate(net, test_loader, criterion, utils.acc_metrics, args)
+    _, test_acc = test_evaluate(net, test_loader, criterion, utils.acc_metrics, args)
     test_metrics = {'test_acc':test_acc}
 
     json_path = os.path.join(args.ckp_dir, 'metrics_test.json')

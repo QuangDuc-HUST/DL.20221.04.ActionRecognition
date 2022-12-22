@@ -13,7 +13,7 @@ from model.lrcn import LRCN
 from model.c3d import C3D
 from model.data_loader import ActionRecognitionDataWrapper 
 
-from evaluate import evaluate
+from evaluate import val_evaluate
 
 import utils
 from utils import seed_everything, get_training_device, acc_metrics, get_lr, get_transforms
@@ -128,7 +128,7 @@ def train_and_valid(epochs, model, train_loader, val_loader, criterion,  optimiz
         
         train(model, train_loader, criterion, optimizer, scheduler, wandb_logger, epoch * len(train_loader), args)
 
-        val_loss, val_acc = evaluate(model, val_loader, criterion, acc_metrics, args)
+        val_loss, val_acc = val_evaluate(model, val_loader, criterion, acc_metrics, args)
 
         if wandb_logger:
             wandb_logger._wandb.log({
