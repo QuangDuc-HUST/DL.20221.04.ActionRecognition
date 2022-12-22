@@ -7,9 +7,13 @@ import torch
 import glob
 import albumentations as A
 import os
+import random
 from albumentations.pytorch import ToTensorV2
+from torch.nn import functional as F
 
 
+
+NUM_IMG_PER_VIDEO = 16
 
 def get_default_agr(agrs):
     agrs['restore_file'] = 'best.pth'
@@ -19,7 +23,7 @@ def get_default_agr(agrs):
     if agrs['model_name'] == "lrcn":
         agrs['resize_to'] = 256
     elif agrs['model_name'] == "c3d":
-        agrs['resize_to'] = 128
+        agrs['resize_to'] = 112
     
     return agrs
 
@@ -40,9 +44,9 @@ def get_model(agrs):
     
     artifact = run.use_artifact(f'dandl/dl_action_recognition/{ARTIFACT_NAME}:v0', type='model')
 
-    print(artifact.metadata)
+    # print(artifact.metadata)
 
-    return 
+    # return 
     print('Download started..')
     model = artifact.get_path(MODEL_FILE).download()
     print('Download completed!')
@@ -82,8 +86,10 @@ def read_image(image_path, transform):
     return img
 
 def get_model_input(filename, args):
+    
+    model_name = args['model_name']
 
-    lst_imgs = glob.glob(f'./deployment/staging/{filename}*')
+    lst_imgs = glob.glob(f'./deployment/staging/{model_name}/{filename}*')
 
     imgs = torch.stack([read_image(path, get_transforms(args)['test_transforms']) for path in lst_imgs], dim=0)
 
@@ -119,18 +125,46 @@ def feature_extraction(video_path, saved_path):
     print("Feature extraction completed")
     video_reader.release()
 
+def feature_extraction1(video_path, saved_path, sequence_length=NUM_IMG_PER_VIDEO):
+    video_reader = cv2.VideoCapture(video_path)
+    #get the frame count
+    frame_count=int(video_reader.get(cv2.CAP_PROP_FRAME_COUNT))
+    
+    #Calculate the starting point
+    if frame_count < NUM_IMG_PER_VIDEO:
+        raise NotImplementedError
+        
+    start_point = max(random.randint(0, frame_count-sequence_length-2), 0)
+    
+    #iterate through video frames
+    for counter in range(sequence_length):
+        #Set the current frame postion of the video
+        video_reader.set(cv2.CAP_PROP_POS_FRAMES, start_point + counter)
+        #Read the current frame 
+        ret, frame = video_reader.read()
+        if not ret:
+            break;
+            
+        cv2.imwrite(saved_path + "_" + str(counter+1) + '.png', frame)
+        
+    video_reader.release()
+
 
 def predict(input, filename, agrs):
 
-    feature_extraction(input, f'./deployment/staging/{filename}')
+    if agrs['model_name'] == 'lrcn':
+        feature_extraction(input, f'./deployment/staging/lrcn/{filename}')
+    else:
+        print(agrs['model_name'])
+        feature_extraction1(input, f'./deployment/staging/c3d/{filename}')
     net = get_model(agrs)
 
     img_inputs = get_model_input(filename, agrs)
 
-    print(torch.unsqueeze(img_inputs, dim=0).shape)
-    output = net(torch.unsqueeze(img_inputs, dim=0))
+    output = net(torch.unsqueeze(img_inputs, dim=0)).flatten()
+    print(F.softmax(output, dim=0))
 
-    return torch.topk(output.flatten(), 10).indices
+    return torch.topk(output, 10).indices, torch.topk(F.softmax(output, dim=0), 10).values
     
 def get_transforms(args):
 
