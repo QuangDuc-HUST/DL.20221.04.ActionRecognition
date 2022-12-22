@@ -43,24 +43,25 @@ def get_model(agrs):
     model = artifact.get_path(MODEL_FILE).download()
     print('Download completed!')
     
-    args.device = utils.get_training_device()
-    dict_args = vars(args)
+    args['device'] = utils.get_training_device()
+    # dict_args = vars(args)
 
     # set everything
     utils.seed_everything(seed=73)
 
     # Get model 
+    print(args)
     if args['model_name'] == "lrcn":
-        net = LRCN(**dict_args,
+        net = LRCN(**args,
                     n_class=NUM_CLASSES)
     elif args['model_name'] == "c3d":
-        net = C3D(**dict_args,
+        net = C3D(**args,
                     n_class=NUM_CLASSES)
     
-    net.to(args.device)
+    net.to(args['device'])
 
     # Load weights
-    utils.load_checkpoint(f'./artifact/dl_action_recognition/{ARTIFACT_NAME}/{MODEL_FILE}', net)
+    utils.load_checkpoint(f'./artifacts/{ARTIFACT_NAME}-v0/{MODEL_FILE}', net)
     
     run.finish()
 
