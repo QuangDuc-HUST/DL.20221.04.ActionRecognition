@@ -19,7 +19,7 @@ async def lrcn_upload_file(
     file: UploadFile= File()
     ):
 
-    res = None
+    res, sftm = None, None
     agrs = {
         'model_name': model_name,
         'latent_dim': 512,
@@ -27,9 +27,8 @@ async def lrcn_upload_file(
         'lstm_layers': 2,
         'bidirectional': True,
     }
-    print(agrs)
-
     temp = NamedTemporaryFile(delete=False)
+
     try:
         print('Reading video..')
         try:
@@ -44,16 +43,16 @@ async def lrcn_upload_file(
         print("Reading completed")
 
         print('Predicting..')
-        res = predict(temp.name, file.filename, agrs)
+        res, sftm = predict(temp.name, agrs)
         print('Predicted')
     except Exception as e:
         print(traceback.format_exc())
         print("There was an error processing the file")
     finally:
         os.remove(temp.name)
-    
     if res is not None:
-        return {"Prediction": ', '.join([str(i) for i in res.numpy()])}
+        return {"Prediction": ', '.join([str(i) for i in res.numpy()]),
+                "Softmax": ', '.join([str(i) for i in sftm.detach().numpy()])}
     else:
         return {"Prediction": "None"}
 
@@ -70,7 +69,6 @@ async def c3d_upload_file(
         'pretrain': False,
         'weight_path': 'c3d.pickle',
     }
-    print(agrs)
 
     temp = NamedTemporaryFile(delete=False)
     try:
@@ -87,7 +85,7 @@ async def c3d_upload_file(
         print("Reading completed")
 
         print('Predicting..')
-        res, sftm = predict(temp.name, file.filename, agrs)
+        res, sftm = predict(temp.name, agrs)
         print('Predicted')
     except Exception as e:
         print(traceback.format_exc())

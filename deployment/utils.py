@@ -10,55 +10,49 @@ import os
 import random
 from albumentations.pytorch import ToTensorV2
 from torch.nn import functional as F
+import traceback
+from deployment.constants import *
 
 
+def get_default_agr(args):
+    args['restore_file'] = MODEL_FILE
+    args['num_workers'] = NUM_WORKERS
+    args['device'] = utils.get_training_device()
 
-NUM_IMG_PER_VIDEO = 16
-
-def get_default_agr(agrs):
-    agrs['restore_file'] = 'best.pth'
-    # DataModule specific args
-    agrs['num_workers'] = 2
-
-    if agrs['model_name'] == "lrcn":
-        agrs['resize_to'] = 256
-    elif agrs['model_name'] == "c3d":
-        agrs['resize_to'] = 112
+    if args['model_name'] == "lrcn":
+        args['resize_to'] = RESIZE_LRCN
+    elif args['model_name'] == "c3d":
+        args['resize_to'] = RESIZE_C3D
     
-    return agrs
+    return args
 
 
-def get_model(agrs):
-
-    NUM_CLASSES = 101
-    MODEL_FILE = 'best.pth'
-    
-    run = wandb.init(project="dl_action_recognition", entity="dandl", anonymous='allow')
-    # 2yy3abfb    
-    args = get_default_agr(agrs)
+def get_model(args):
 
     if args['model_name'] == 'lrcn':
-        ARTIFACT_NAME = '3eyhjzfd_model'
+        ARTIFACT_NAME = ARTIFACT_NAME_LRCN
     else:
-        ARTIFACT_NAME = '38ckat92_model'
-    
-    artifact = run.use_artifact(f'dandl/dl_action_recognition/{ARTIFACT_NAME}:v0', type='model')
+        ARTIFACT_NAME = ARTIFACT_NAME_C3D
 
-    # print(artifact.metadata)
+    run = wandb.init(project="dl_action_recognition", entity="dandl", anonymous='allow')
+    try:
+        artifact = run.use_artifact(f'dandl/dl_action_recognition/{ARTIFACT_NAME}:v0', type='model')
 
-    # return 
-    print('Download started..')
-    model = artifact.get_path(MODEL_FILE).download()
-    print('Download completed!')
+        print('Download started..')
+        model = artifact.get_path(MODEL_FILE).download()
+        print('Download completed!')
+    except Exception as e:
+        print(traceback.format_exc()) 
+    run.finish()
     
-    args['device'] = utils.get_training_device()
+
+    # args['device'] = utils.get_training_device()
     # dict_args = vars(args)
 
     # set everything
     utils.seed_everything(seed=73)
 
     # Get model 
-    print(args)
     if args['model_name'] == "lrcn":
         net = LRCN(**args,
                     n_class=NUM_CLASSES)
@@ -71,35 +65,22 @@ def get_model(agrs):
     # Load weights
     load_checkpoint(f'./artifacts/{ARTIFACT_NAME}-v0/{MODEL_FILE}', net)
     
-    run.finish()
-
     return net
 
-def read_image(image_path, transform):
+def read_image(img, transform):
         
-    img = cv2.imread(image_path)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     
     if transform is not None:
         img = transform(image=img)['image']
     
     return img
-
-def get_model_input(filename, args):
     
-    model_name = args['model_name']
+def extract_frames_from_videos_lrcn(video_path, args, sequence_length=5):
 
-    lst_imgs = glob.glob(f'./deployment/staging/{model_name}/{filename}*')
-
-    imgs = torch.stack([read_image(path, get_transforms(args)['test_transforms']) for path in lst_imgs], dim=0)
-
-    return imgs.to(args['device'], non_blocking=True)
-    
-def feature_extraction(video_path, saved_path):
+    frames = []
+    print(f"Start extract {sequence_length} frames..")
     try:
-        width = 256
-        height = 256
-        sequence_length = 5 
         
         #Read the Video
         video_reader = cv2.VideoCapture(video_path)
@@ -116,55 +97,70 @@ def feature_extraction(video_path, saved_path):
             if not ret:
                 break;
             #Resize the image
-            frame = cv2.resize(frame, (height, width), interpolation = cv2.INTER_CUBIC)
+            # frame = cv2.resize(frame, (height, width), interpolation = cv2.INTER_CUBIC)
             
-            cv2.imwrite(saved_path + "_" + str(counter+1) + '.png', frame)
+            # cv2.imwrite(saved_path + "_" + str(counter+1) + '.png', frame)
+            frames.append(read_image(frame, get_transforms(args)['test_transforms']))
     except Exception as e:
-        print("An error occured while extracting")
-        print(e)
-    print("Feature extraction completed")
+        print(f"An error occured while extracting {sequence_length} frames")
+        print(traceback.format_exc())
+    print(f"Extracted {sequence_length} frames")
+
     video_reader.release()
 
-def feature_extraction1(video_path, saved_path, sequence_length=NUM_IMG_PER_VIDEO):
-    video_reader = cv2.VideoCapture(video_path)
-    #get the frame count
-    frame_count=int(video_reader.get(cv2.CAP_PROP_FRAME_COUNT))
-    
-    #Calculate the starting point
-    if frame_count < NUM_IMG_PER_VIDEO:
-        raise NotImplementedError
+    return torch.stack(frames, dim=0).to(args['device'], non_blocking=True)
+
+def extract_frames_from_videos_c3d(video_path, args, sequence_length=16):
+
+    frames = []
+    print(f"Start extract {sequence_length} frames..")
+    try:
+        video_reader = cv2.VideoCapture(video_path)
+        #get the frame count
+        frame_count=int(video_reader.get(cv2.CAP_PROP_FRAME_COUNT))
         
-    start_point = max(random.randint(0, frame_count-sequence_length-2), 0)
-    
-    #iterate through video frames
-    for counter in range(sequence_length):
-        #Set the current frame postion of the video
-        video_reader.set(cv2.CAP_PROP_POS_FRAMES, start_point + counter)
-        #Read the current frame 
-        ret, frame = video_reader.read()
-        if not ret:
-            break;
+        #Calculate the starting point
+        if frame_count < sequence_length:
+            raise NotImplementedError
             
-        cv2.imwrite(saved_path + "_" + str(counter+1) + '.png', frame)
+        start_point = max(random.randint(0, frame_count-sequence_length-2), 0)
         
+        #iterate through video frames
+        for counter in range(sequence_length):
+            #Set the current frame postion of the video
+            video_reader.set(cv2.CAP_PROP_POS_FRAMES, start_point + counter)
+            #Read the current frame 
+            ret, frame = video_reader.read()
+            if not ret:
+                break;
+            frames.append(read_image(frame, get_transforms(args)['test_transforms']))
+
+    except Exception as e:
+        print(f"An error occured while extracting {sequence_length} frames")
+        print(traceback.format_exc())
+    print(f"Extracted {sequence_length} frames")
+
     video_reader.release()
 
+    return torch.stack(frames, dim=0).to(args['device'], non_blocking=True)
 
-def predict(input, filename, agrs):
 
-    if agrs['model_name'] == 'lrcn':
-        feature_extraction(input, f'./deployment/staging/lrcn/{filename}')
+def predict(input, args):
+
+    args = get_default_agr(args)
+
+    if args['model_name'] == 'lrcn':
+        inputs = extract_frames_from_videos_lrcn(input, args)
     else:
-        print(agrs['model_name'])
-        feature_extraction1(input, f'./deployment/staging/c3d/{filename}')
-    net = get_model(agrs)
+        inputs = extract_frames_from_videos_c3d(input, args)
+    print(inputs.shape)
+    net = get_model(args)
 
-    img_inputs = get_model_input(filename, agrs)
+    with torch.no_grad():
+        net.eval()
+        output = net(torch.unsqueeze(inputs, dim=0))
 
-    output = net(torch.unsqueeze(img_inputs, dim=0)).flatten()
-    print(F.softmax(output, dim=0))
-
-    return torch.topk(output, 10).indices, torch.topk(F.softmax(output, dim=0), 10).values
+    return torch.topk(output, 10).indices, torch.topk(F.softmax(output.flatten(), dim=0), 10).values
     
 def get_transforms(args):
 
