@@ -1,26 +1,36 @@
 # Importing Necessary modules
-from fastapi import FastAPI, File, UploadFile
 from tempfile import NamedTemporaryFile
-from pydantic import BaseModel
-from deployment.model import *
+from deployment.utils import *
+from deployment.request_body import *
 # from colabcode import ColabCode
 import os
 import traceback
 
-
-
 # Declaring our FastAPI instance
 app = FastAPI()
 
-class request_body(BaseModel):
-    description: str
-
 @app.get('/')
 def index():
-    return {'message': 'This is the homepage of the API '}
+    return {'message': 'Go to /docs'}
     
-@app.post("/uploadfile/")
-async def create_upload_file(file: UploadFile, model_name: str):
+@app.post("/lrcn/")
+async def lrcn_upload_file(
+    model_name: str = Form(default='lrcn'),
+    latent_dim: int = Form(default=512),
+    hidden_size: int = Form(default=256),
+    lstm_layers: int = Form(default=2),
+    bidirectional: bool = Form(default=True),
+    file: UploadFile= File()
+    ):
+
+    agrs = {
+        'model_name': model_name,
+        'latent_dim': latent_dim,
+        'hidden_size': hidden_size,
+        'lstm_layers': lstm_layers,
+        'bidirectional': bidirectional,
+    }
+    print(agrs)
 
     temp = NamedTemporaryFile(delete=False)
     try:
@@ -35,7 +45,47 @@ async def create_upload_file(file: UploadFile, model_name: str):
         finally:
             file.file.close()
 
-        res = predict(temp.name, file.filename, model_name)
+        res = predict(temp.name, file.filename, agrs)
+    except Exception as e:
+        print(traceback.format_exc())
+        print("There was an error processing the file")
+    finally:
+        print("Reading completed")
+        os.remove(temp.name)
+
+    return {"filename": res}
+
+@app.post("/c3d/")
+async def c3d_upload_file(
+    model_name: str = Form(default='c3d'),
+    drop_out: float = Form(default=0.5),
+    pretrain: bool = Form(default=False),
+    weight_path: str = Form(default='c3d.pickle'),
+    file: UploadFile= File()
+    ):
+
+    agrs = {
+        'model_name': model_name,
+        'drop_out': drop_out,
+        'pretrain': pretrain,
+        'weight_path': weight_path,
+    }
+    print(agrs)
+
+    temp = NamedTemporaryFile(delete=False)
+    try:
+        print('Reading video..')
+        try:
+            contents = file.file.read()
+            with temp as f:
+                f.write(contents);
+        except Exception as e:
+            print(traceback.format_exc())
+            print("There was an error uploading the file")
+        finally:
+            file.file.close()
+
+        res = predict(temp.name, file.filename, agrs)
     except Exception as e:
         print(traceback.format_exc())
         print("There was an error processing the file")
