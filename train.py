@@ -145,7 +145,7 @@ def train_and_valid(epochs, model, train_loader, val_loader, criterion,  optimiz
             print("- Found new best accuracy performance")
 
         # Checkpoint saving
-        utils.save_checkpoint({'epoch': epoch + 1,
+        utils.save_checkpoint({ 'epoch': epoch + 1,
                                 'state_dict': model.state_dict(),
                                 'optim_dict': optimizer.state_dict(),},
                                 is_best=is_best,

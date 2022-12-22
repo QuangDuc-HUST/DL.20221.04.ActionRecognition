@@ -70,7 +70,7 @@ if __name__ == '__main__':
         runcmd(f'sh {args.kaggle_config}')
 
     # Download file
-    print("Downloading the dataset...")
+    print(f"Downloading the dataset... to {final_data_folder}")
 
     # Create temp folder for zip file
     if not os.path.exists('./temp/'):

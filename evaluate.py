@@ -1,5 +1,5 @@
 #
-# For evaluate valset and test set
+# For evaluate val set and test set
 #
 import os
 import argparse
