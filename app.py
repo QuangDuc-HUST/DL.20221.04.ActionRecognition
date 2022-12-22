@@ -3,6 +3,7 @@ from fastapi import FastAPI, File, UploadFile
 from tempfile import NamedTemporaryFile
 from pydantic import BaseModel
 from deployment.model import *
+# from colabcode import ColabCode
 import os
 import traceback
 
@@ -13,6 +14,10 @@ app = FastAPI()
 
 class request_body(BaseModel):
     description: str
+
+@app.get('/')
+def index():
+    return {'message': 'This is the homepage of the API '}
     
 @app.post("/uploadfile/")
 async def create_upload_file(file: UploadFile, model_name: str):
@@ -40,3 +45,5 @@ async def create_upload_file(file: UploadFile, model_name: str):
 
     return {"filename": res}
 
+# cc = ColabCode(port=12000, code=False)
+# cc.run_app(app=app)

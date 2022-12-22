@@ -24,28 +24,32 @@ def get_arg_parser(model_name):
 
     if model_name == "lrcn":
         parser = LRCN.add_model_specific_args(parser)
+        parser.add_argument('--resize_to', type=int, default=256)
     elif model_name == "c3d":
         parser = C3D.add_model_specific_args(parser)
-
+        parser.add_argument('--resize_to', type=int, default=128)
     return parser.parse_args()
 
 
-def get_model(model_name, type):
+def get_model(model_name):
 
     NUM_CLASSES = 101
     MODEL_FILE = 'best.pth'
     
     run = wandb.init(project="dl_action_recognition", entity="dandl")
 
-    if type=='lrcn':
+    args = get_arg_parser(model_name)
+
+    if args.model_name == 'lrcn':
         ARTIFACT_NAME = '3eyhjzfd_model'
-    else:
+    elif args.model_name == "c3d":
         ARTIFACT_NAME = '38ckat92_model'
+    else:
+        print(f"Error! There is no model {args.model_name}")
+        return
     
     artifact = run.use_artifact(f'dandl/dl_action_recognition/{ARTIFACT_NAME}:v0', type='model')
     model = artifact.get_path(MODEL_FILE).download()
-
-    args = get_arg_parser(model_name)
 
     args.device = utils.get_training_device()
     dict_args = vars(args)
@@ -68,7 +72,7 @@ def get_model(model_name, type):
     
     run.finish()
 
-    return net
+    return net, args
 
 def read_image(image_path, transform):
         
@@ -80,11 +84,11 @@ def read_image(image_path, transform):
     
     return img
 
-def get_model_input(filename):
+def get_model_input(filename, args):
 
     lst_imgs = glob.glob(f'./deployment/staging/{filename}*')
 
-    imgs = torch.stack([read_image(path, utils.get_transforms()['test_transforms']) for path in lst_imgs], dim=0)
+    imgs = torch.stack([read_image(path, utils.get_transforms(args)['test_transforms']) for path in lst_imgs], dim=0)
 
     return imgs
     
@@ -122,10 +126,11 @@ def feature_extraction(video_path, saved_path):
 def predict(input, filename, model_name):
 
     feature_extraction(input, f'./deployment/staging/{filename}')
+    net, agrs = get_model(model_name)
 
-    img_inputs = get_model_input(filename)
+    img_inputs = get_model_input(filename, agrs)
 
-    model = get_model(model_name)
+    
 
 
 
