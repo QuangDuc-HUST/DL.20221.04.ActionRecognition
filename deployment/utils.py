@@ -6,6 +6,7 @@ import cv2
 import torch
 import glob
 import albumentations as A
+import os
 from albumentations.pytorch import ToTensorV2
 
 
@@ -29,7 +30,7 @@ def get_model(agrs):
     MODEL_FILE = 'best.pth'
     
     run = wandb.init(project="dl_action_recognition", entity="dandl", anonymous='allow')
-
+    # 2yy3abfb    
     args = get_default_agr(agrs)
 
     if args['model_name'] == 'lrcn':
@@ -39,6 +40,9 @@ def get_model(agrs):
     
     artifact = run.use_artifact(f'dandl/dl_action_recognition/{ARTIFACT_NAME}:v0', type='model')
 
+    print(artifact.metadata)
+
+    return 
     print('Download started..')
     model = artifact.get_path(MODEL_FILE).download()
     print('Download completed!')
@@ -61,7 +65,7 @@ def get_model(agrs):
     net.to(args['device'])
 
     # Load weights
-    utils.load_checkpoint(f'./artifacts/{ARTIFACT_NAME}-v0/{MODEL_FILE}', net)
+    load_checkpoint(f'./artifacts/{ARTIFACT_NAME}-v0/{MODEL_FILE}', net)
     
     run.finish()
 
@@ -83,7 +87,7 @@ def get_model_input(filename, args):
 
     imgs = torch.stack([read_image(path, get_transforms(args)['test_transforms']) for path in lst_imgs], dim=0)
 
-    return imgs
+    return imgs.to(args['device'], non_blocking=True)
     
 def feature_extraction(video_path, saved_path):
     try:
@@ -123,6 +127,10 @@ def predict(input, filename, agrs):
 
     img_inputs = get_model_input(filename, agrs)
 
+    print(torch.unsqueeze(img_inputs, dim=0).shape)
+    output = net(torch.unsqueeze(img_inputs, dim=0))
+
+    return torch.topk(output.flatten(), 10).indices
     
 def get_transforms(args):
 
@@ -152,6 +160,27 @@ def get_transforms(args):
             'val_transforms': val_transforms,
             'test_transforms': test_transforms}
 
+
+def load_checkpoint(checkpoint, model, optimizer=None):
+    """Loads model parameters (state_dict) from file_path. If optimizer is provided, loads state_dict of
+    optimizer assuming it is present in checkpoint.
+
+    Args:
+        checkpoint: (string) filename which needs to be loaded
+        model: (torch.nn.Module) model for which the parameters are loaded
+        optimizer: (torch.optim) optional: resume optimizer from checkpoint
+    """
+
+    if not os.path.exists(checkpoint):
+        raise("File doesn't exist {}".format(checkpoint))
+    
+    checkpoint = torch.load(checkpoint, map_location=torch.device('cpu'))
+    model.load_state_dict(checkpoint['state_dict']) #maybe epoch as well
+
+    if optimizer:
+        optimizer.load_state_dict(checkpoint['optim_dict'])
+
+    return checkpoint
 
 
 

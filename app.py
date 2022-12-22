@@ -53,8 +53,11 @@ async def lrcn_upload_file(
     finally:
         print("Reading completed")
         os.remove(temp.name)
-
-    return {"filename": res}
+    
+    if res is not None:
+        return {"Prediction": ', '.join([str(i) for i in res.numpy()])}
+    else:
+        return {"Prediction": "None"}
 
 @app.post("/c3d/")
 async def c3d_upload_file(
@@ -86,8 +89,10 @@ async def c3d_upload_file(
             print("There was an error uploading the file")
         finally:
             file.file.close()
-
+        
+        print('Predicting..')
         res = predict(temp.name, file.filename, agrs)
+        print('Predicted')
     except Exception as e:
         print(traceback.format_exc())
         print("There was an error processing the file")
