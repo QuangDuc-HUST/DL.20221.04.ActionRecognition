@@ -32,6 +32,7 @@ def get_arg_parser():
     parser.add_argument('--data_split', type=str, default='split1', choices=['split1', 'split2', 'split3'])
     parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--num_workers', type=int, default=2)
+    parser.add_argument('--clip_per_video', type=int, default=1)
 
     # hyperparameters specific args
     parser.add_argument('--max_epochs', type=int, default=5)
@@ -47,8 +48,17 @@ def get_arg_parser():
 
     if temp_args.model_name == "lrcn":
         parser = LRCN.add_model_specific_args(parser)
+
+        # Data transform
+        parser.add_argument('--resize_to', type=int, default=256)   # 5 uni
+
     elif temp_args.model_name == "c3d":
         parser = C3D.add_model_specific_args(parser)
+
+        # Data transform
+        parser.add_argument('--resize_to', type=int, default=112)
+
+
 
     # Wandb specific args
     parser.add_argument('--enable_wandb', action='store_true')
@@ -107,6 +117,7 @@ def train(model, train_loader, criterion, optimizer, scheduler, wandb_logger, st
 def train_and_valid(epochs, model, train_loader, val_loader, criterion,  optimizer, scheduler, ckp_dir, wandb_logger, args):
 
     if wandb_logger:
+        wandb_logger.log_info() # Get wandb info
         wandb_logger.set_steps()
 
     best_val_acc = 0.0 
@@ -154,7 +165,6 @@ def train_and_valid(epochs, model, train_loader, val_loader, criterion,  optimiz
     if wandb_logger and args.wandb_ckpt and args.ckp_dir:
         wandb_logger._wandb.log({})  # Commit the last
         
-        wandb_logger.log_info()
         wandb_logger.log_checkpoints()
 
 if __name__ == '__main__':
@@ -171,7 +181,7 @@ if __name__ == '__main__':
 
     # Get data wrapper
     data_wrapper = ActionRecognitionDataWrapper(**dict_args, 
-                                                transforms=get_transforms())
+                                                transforms=get_transforms(args))
     
     # Get NUM_CLASSES
     if args.dataset == 'hmdb51':

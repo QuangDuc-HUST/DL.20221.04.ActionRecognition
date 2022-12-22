@@ -31,6 +31,7 @@ def get_arg_parser():
     parser.add_argument('--data_split', type=str, default='split1', choices=['split1', 'split2', 'split3'])
     parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--num_workers', type=int, default=2)
+    parser.add_argument('--clip_per_video', type=int, default=1)
 
 
     # Module specific args
@@ -42,8 +43,16 @@ def get_arg_parser():
 
     if temp_args.model_name == "lrcn":
         parser = LRCN.add_model_specific_args(parser)
+
+        # Data transform
+        parser.add_argument('--resize_to', type=int, default=256)   # 5 uni
+
     elif temp_args.model_name == "c3d":
         parser = C3D.add_model_specific_args(parser)
+
+        # Data transform
+        parser.add_argument('--resize_to', type=int, default=128)
+
 
     # Wandb specific args
     parser.add_argument('--enable_wandb', action='store_true')
@@ -101,7 +110,7 @@ if __name__ == '__main__':
 
     # Get data wrapper
     data_wrapper = ActionRecognitionDataWrapper(**dict_args, 
-                                                transforms=utils.get_transforms())
+                                                transforms=utils.get_transforms(args))
     
     # Get test loader
     test_loader = data_wrapper.get_test_dataloader()

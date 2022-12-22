@@ -12,25 +12,25 @@ import numpy as np
 import torch 
 
 
-def get_transforms():
+def get_transforms(args):
 
     train_transforms = A.Compose(
         [
-            A.Resize(112, 112, interpolation=cv2.INTER_CUBIC),
+            A.Resize(args.resize_to, args.resize_to, interpolation=cv2.INTER_CUBIC),
             A.Normalize(),
             ToTensorV2(),
         ]
         )
     val_transforms = A.Compose(
         [   
-            A.Resize(112, 112, interpolation=cv2.INTER_CUBIC),
+            A.Resize(args.resize_to, args.resize_to, interpolation=cv2.INTER_CUBIC),
             A.Normalize(),
             ToTensorV2(),
         ]
         )
     test_transforms = A.Compose(
         [   
-            A.Resize(112, 112, interpolation=cv2.INTER_CUBIC),
+            A.Resize(args.resize_to, args.resize_to, interpolation=cv2.INTER_CUBIC),
             A.Normalize(),
             ToTensorV2(),
         ]
@@ -104,6 +104,10 @@ class WandbLogger():
     def log_info(self):
         
         log_dir = self.args.ckp_dir
+        
+        if not os.path.exists(log_dir):
+            print("Checkpoint Directory does not exist! Making directory {}".format(log_dir))
+            os.makedirs(log_dir)
 
         wandb_log_json_path = os.path.join(log_dir, 'wandb_info.json')
 
