@@ -75,14 +75,13 @@ class ActionRecognitionDatasetTest(ActionRecognitionDataset):
         if self.clip_per_video <= 1:
             clip_path = video_path
             imgs = self._read_one_clip(clip_path)
-            label = torch.tensor(label).long()
         
         else:
             clip_paths = os.listdir(video_path)
             imgs = torch.stack([self._read_one_clip(os.path.join(video_path, path)) for path in clip_paths],
                                 dim=0)
-            label = torch.tensor(label).long()
-        
+
+        label = torch.tensor(label).long()
         return imgs, label
 
 
@@ -161,8 +160,8 @@ class ActionRecognitionDataWrapper():
         annotation_folder = f'./data/{self.dataset.upper()}/annotation/'
         default_df = pd.read_csv(os.path.join(annotation_folder, 'train_test_split.csv'))
 
-        train_val_df = default_df[default_df[self.split] == 'train']
-        test_df = default_df[default_df[self.split] == 'test']
+        train_val_df = default_df[default_df[self.split] == 'train'].copy(deep=True)
+        test_df = default_df[default_df[self.split] == 'test'].copy(deep=True)
 
         if self.clip_per_video > 1:
             train_val_df['video_folder_path'] = train_val_df['video_folder_path'].apply(_get_name_clip)

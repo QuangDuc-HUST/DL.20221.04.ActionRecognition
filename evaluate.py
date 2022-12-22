@@ -8,7 +8,6 @@ from tqdm import tqdm
 
 import torch
 from torch import nn
-import torch.nn.functional as F
 
 from model.lrcn import LRCN
 from model.c3d import C3D
@@ -52,7 +51,7 @@ def get_arg_parser():
         parser = C3D.add_model_specific_args(parser)
 
         # Data transform
-        parser.add_argument('--resize_to', type=int, default=128)
+        parser.add_argument('--resize_to', type=int, default=112)   #16 frames clip
 
 
     # Wandb specific args
@@ -110,20 +109,20 @@ def test_evaluate(model, test_data_loader, metrics, args):
                     label = label.to(args.device, non_blocking=True)
 
                     #forward
-                    output = F.sigmoid(model(clip))
+                    output = torch.softmax(model(clip))
                 
                 else:
                     outputs = []
-                    clip, label = data
+                    clips, label = data
                     label = label.to(args.device, non_blocking=True)
                     for i in range(args.clip_per_video):
-                        
-                        clip = clip[:,i,:,:,:].to(args.device, non_blocking=True)
+
+                        clip = clips[:,i,:,:,:].to(args.device, non_blocking=True)
                         #forward
-                        outputs.append(F.sigmoid(model(clip)))
+                        outputs.append(torch.softmax(model(clip), dim=1))
                     
-                    outputs = torch.stack(outputs, dim=0)
-                    output = torch.mean(outputs, dim=0)
+                    outputs = torch.stack(outputs, dim=1)
+                    output = torch.mean(outputs, dim=1)
 
                 acc = metrics(output, label)
                 acc_summ += acc.item()
@@ -180,7 +179,7 @@ if __name__ == '__main__':
     utils.load_checkpoint(os.path.join(args.ckp_dir, args.restore_file), net)
 
     # Evaluate
-    _, test_acc = test_evaluate(net, test_loader, criterion, utils.acc_metrics, args)
+    test_acc = test_evaluate(net, test_loader, utils.acc_metrics, args)
     test_metrics = {'test_acc':test_acc}
 
     json_path = os.path.join(args.ckp_dir, 'metrics_test.json')
