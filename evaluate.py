@@ -11,6 +11,7 @@ from torch import nn
 
 from model.lrcn import LRCN
 from model.c3d import C3D
+from model.i3d import I3D, i3d_resnet50
 from model.data_loader import ActionRecognitionDataWrapper 
 
 import utils
@@ -36,7 +37,7 @@ def get_arg_parser():
 
     # Module specific args
     ## which model to use
-    parser.add_argument('--model_name', type=str, required=True, choices=["lrcn", "c3d"])
+    parser.add_argument('--model_name', type=str, required=True, choices=["lrcn", "c3d", "i3d"])
 
     ## Get the model name now 
     temp_args, _ = parser.parse_known_args()
@@ -52,7 +53,12 @@ def get_arg_parser():
 
         # Data transform
         parser.add_argument('--resize_to', type=int, default=112)   #16 frames clip
+    
+    elif temp_args.model_name == "i3d":
+        parser = I3D.add_model_specific_args(parser)
 
+         # Data transform
+        parser.add_argument('--resize_to', type=int, default=112)   # Maybe 224
 
     # Wandb specific args
     parser.add_argument('--enable_wandb', action='store_true')
@@ -170,6 +176,10 @@ if __name__ == '__main__':
     elif args.model_name == "c3d":
         net = C3D(**dict_args,
                     n_class=NUM_CLASSES)
+    elif args.model_name == "i3d":
+        net = i3d_resnet50(num_classes=NUM_CLASSES)
+
+        
     net.to(args.device)
 
     # Loss functions
