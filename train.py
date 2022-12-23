@@ -12,7 +12,7 @@ from torch import nn
 from model.lrcn import LRCN
 from model.c3d import C3D
 from model.i3d import I3D, i3d_resnet50
-from model.resnet3D_nonblock import ResNet3D, resnet3D50
+from model.non_local_i3res import I3Res50, i3_res50_nl
 from model.data_loader import ActionRecognitionDataWrapper 
 
 from evaluate import val_evaluate
@@ -67,7 +67,7 @@ def get_arg_parser():
         parser.add_argument('--resize_to', type=int, default=112)   # Maybe 224
 
     elif temp_args.model_name == "non_local":
-        parser = ResNet3D.add_model_specific_args(parser)
+        parser = I3Res50.add_model_specific_args(parser)
         parser.add_argument('--resize_to', type=int, default=224) 
 
 
@@ -216,7 +216,7 @@ if __name__ == '__main__':
     elif args.model_name == "i3d":
         net = i3d_resnet50(num_classes=NUM_CLASSES)
     elif args.model_name == "non_local":
-        net = resnet3D50(non_local=True, num_classes=NUM_CLASSES)
+        net = i3_res50_nl(num_classes=NUM_CLASSES, use_nl=args.use_nl, weight_path=args.weight_path)
         
     net.to(args.device)
 
