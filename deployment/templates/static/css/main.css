@@ -1,0 +1,15 @@
+div#video {
+    text-align: left;
+    margin-left: 10%;
+  }
+
+div#table1 {
+    margin-top: -45%;
+    margin-left: 70%;
+    text-align: center;
+}
+
+table#result {
+  margin-left: auto;
+  margin-right: auto;
+}

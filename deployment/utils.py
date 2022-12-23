@@ -193,10 +193,53 @@ def load_checkpoint(checkpoint, model, optimizer=None):
 def convert_avi_to_mp4(filename):
 
     clip = moviepy.VideoFileClip(filename=filename)
-    clip.write_videofile(f'./deployment/staging/video/temp_video.mp4')
+    clip.write_videofile('./deployment/staging/video/temp_video.mp4')
     clip.close()
 
     print('done')
+
+def write_result_to_video(message):
+
+    cap = cv2.VideoCapture('./deployment/staging/video/temp_video.mp4')
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter('./deployment/staging/video/temp_video.mp4', 
+                            fourcc=fourcc,
+                            fps=cap.get(cv2.CAP_PROP_FPS),
+                            frameSize=(int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
+                                int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))),
+                            )
+
+    while cap.isOpened():
+        
+        # Capture frames in the video
+        
+        ret, frame = cap.read()
+        # describe the type of font
+        # to be used.
+        font = cv2.FONT_HERSHEY_SIMPLEX
+
+        # Use putText() method for
+        # inserting text on video
+        cv2.putText(frame,
+                    message,
+                    (20, 40),
+                    font, 0.6,
+                    (0, 0, 255), 1)
+        out.write(frame)
+        print(1)
+        # Display the resulting frame
+        # cv2.imshow('video', frame)
+        if not ret:
+            break
+
+    # release the cap object
+    print(cap.get(cv2.CAP_PROP_FPS))
+    
+    cap.release()
+    out.release()
+    # close all windows
+    # cv2.destroyAllWindows()
+
 
 
 

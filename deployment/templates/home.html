@@ -4,26 +4,25 @@
     <link id="favicon" rel="icon" type="image/x-icon" href="static/img/favicon.ico">
 <body>
 
-<p>Click on the "Choose File" button to upload a file:</p>
-<!-- <br>
-<video autoplay id="video" controls="controls">
-    <source id="source" type="video/mp4">
-</video>
-<br> -->
-<form method="POST" action="/predict" id="myForm" enctype="multipart/form-data">
+<div style="text-align: center;">
+    <p>Click on the "Choose File" button to upload a file:</p>
+    <form method="POST" action="/predict" id="myForm" enctype="multipart/form-data">
 
-    <label for="model_name">Choose a model type:</label>
-    <select id="model_name_dropdown" name="model_name" value="lrcn" onclick="getModelName()" form="myForm">
-        <option value="lrcn">Long-term Recurrent Convolutional Networks</option>
-        <option value="c3d">3-Dimensional Convolutional Networks</option>
-    </select>
-    <br>
-
-    <input id="file" name="file" type="file">
-    <br>
-        <!-- <input  id="file" type="file" onchange="selectVideo(this);"> -->
-    <input type="submit" value="Predict" onclick="printValue()">
-</form>
+        <label for="model_name">Choose a model type:</label>
+        <select id="model_name_dropdown" name="model_name" value="lrcn" onclick="getModelName()" form="myForm">
+            <option value="lrcn">Long-term Recurrent Convolutional Networks</option>
+            <option value="c3d">3-Dimensional Convolutional Networks</option>
+        </select>
+        <br>
+        <br>
+        <input id="file" name="file" type="file">
+        <br>
+        <br>
+        <a href="/predict_result">
+            <input type="submit"/>
+        </a>
+    </form>
+</div>
 
 </body>
 </html>

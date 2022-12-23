@@ -1,9 +1,14 @@
+import pandas as pd
+
+
 NUM_CLASSES = 101
 
 MODEL_FILE = 'best.pth'
 NUM_WORKERS = 2
 RESIZE_LRCN = 256
 RESIZE_C3D = 112
+
+LABEL = pd.read_csv('./data/UCF101/annotation/video_class_to_label.csv')[['video_class_id', 'label_id']].rename(columns={'video_class_id': 'label'})
 
 ARTIFACT_NAME_LRCN = 'ucf101-lrcn-5f-uni-256-resnet-backbone-lr-5e-4-epochs-20'
 LRCN_ARGS = {

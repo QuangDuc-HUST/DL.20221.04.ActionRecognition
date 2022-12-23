@@ -1,37 +1,52 @@
 <!DOCTYPE html>
 <html>
     <link rel="shortcut icon" href="#">
+    <link rel="stylesheet" type="text/css" href="static/css/main.css" 
 <body>
 
-<p>Click on the "Choose File" button to upload a file:</p>
-<input  id="file" type="file" onchange="selectVideo(this);">
+<!-- <p>Click on the "Choose File" button to upload a file:</p>
+<input  id="file" type="file" onchange="selectVideo(this);"> -->
+<div id="container">
+    <div id="video">
+        <p>Your video: </p>
+        <video autoplay id="video" controls="controls" width="60%" height="60%">
+            <!-- <p>Your video here</p> -->
+            <source id="source" type="video/mp4" src="staging/video/temp_video.mp4">
+        </video>
+        <br>
+        <br>
+        <button onclick="location.href='/'" type="button"> Go to homepage </button>
+    </div>
 
-<video autoplay id="video" controls="controls">
-    <!-- <p>Your video here</p> -->
-    <source id="source" type="video/mp4">
-</video>
+    <div id="table1">
+        <div id="nega">
+            <img src="static/img/nigga.png" alt="nigga 2 thumbs up" width="200" >
+            <p>Author</p>
+        </div>
+        <p style="color:red;text-decoration: underline;">True label: {{ ground_true }}</p>
+        <p>Trust me!!!!!!!!</p>
+        <br>
+        <table id="result">
+            <tr>
+                {% for header in heading %}
+                <th> {{ header }} </th>
+                {% endfor %}
+            </tr>
+
+            {% for lb, s in res %}
+                <tr>
+                    <td> {{ lb }} </td>
+                    <td><progress id="file" value="{{ s }}"  max="1"></progress></td>
+                </tr>
+            {% endfor %}
+
+        </table>
+    </div>
+
+    
+</div>
 
 </body>
 </html>
 
-<script>
-    function selectVideo(self) {
-        var file = self.files[0];
-        alter('gadg');
-        var reader = new FileReader();
-
-        reader.onload = function(e) {
-            var src = e.target.result;
-            var video = document.getElementById('video');
-            var source = document.getElementById('source');
-
-            source.setAttribute('src', src);
-            video.load();
-            video.play();
-        };
-
-        reader.readAsDataURL(file);
-        // alert("Read");
-    }
-
-</script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
