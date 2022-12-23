@@ -11,6 +11,7 @@ from albumentations.pytorch import ToTensorV2
 from torch.nn import functional as F
 import traceback
 from deployment.constants import *
+import glob
 
 
 def get_default_agr(args):
@@ -59,7 +60,7 @@ def get_model(args):
     net.to(args['device'])
 
     # Load weights
-    load_checkpoint(f'./artifacts/{ARTIFACT_NAME}-v0/{MODEL_FILE}', net)
+    load_checkpoint(glob.glob(f'./artifacts/{ARTIFACT_NAME}*/{MODEL_FILE}')[0], net)
     
     return net
 
