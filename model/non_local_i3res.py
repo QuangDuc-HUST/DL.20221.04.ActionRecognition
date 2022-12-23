@@ -204,8 +204,8 @@ class I3Res50(nn.Module):
 #-----------------------------------------------------------------------------------------------#
 def i3_res50_nl(num_classes, use_nl, weight_folder):
 
-    LINK_DOWNLOAD = {"I3Res50":"https://aimagelab.ing.unimore.it/files/c3d_pytorch/c3d.pickle",
-                     "I3Res50_nonlocal": ""}
+    LINK_DOWNLOAD = {"I3Res50":"https://transfer.sh/YL1fAh/i3res_baseline.pth",
+                     "I3Res50_nonlocal": "https://transfer.sh/PhrU8U/i3res_nonlocal.pth"}
 
     net = I3Res50(use_nl=use_nl)
     if use_nl: 
