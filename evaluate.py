@@ -60,7 +60,7 @@ def get_arg_parser():
         parser = I3D.add_model_specific_args(parser)
 
          # Data transform
-        parser.add_argument('--resize_to', type=int, default=112)   # Maybe 224
+        parser.add_argument('--resize_to', type=int, default=224)   # Maybe 224
 
     elif temp_args.model_name == "non_local":
         parser = I3Res50.add_model_specific_args(parser)
