@@ -216,7 +216,7 @@ if __name__ == '__main__':
     elif args.model_name == "i3d":
         net = i3d_resnet50(num_classes=NUM_CLASSES)
     elif args.model_name == "non_local":
-        net = i3_res50_nl(num_classes=NUM_CLASSES, use_nl=args.use_nl, weight_path=args.weight_path)
+        net = i3_res50_nl(num_classes=NUM_CLASSES, use_nl=args.use_nl, weight_folder=args.weight_folder)
         
     net.to(args.device)
 

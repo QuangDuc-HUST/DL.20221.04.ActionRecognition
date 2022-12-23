@@ -4,6 +4,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from urllib import request
+import os
 
 class FrozenBN(nn.Module):
     def __init__(self, num_channels, momentum=0.1, eps=1e-5):
@@ -132,7 +134,7 @@ class I3Res50(nn.Module):
     def add_model_specific_args(parent_parser):
         parser = parent_parser.add_argument_group("non_local")
         parser.add_argument("--use_nl", action='store_true')
-        parser.add_argument("--weight_path", type=str, default='./model/weights/i3d_nonlocal.pth')
+        parser.add_argument("--weight_folder", type=str, default='./model/weights/')
 
         return parent_parser
 
@@ -200,10 +202,30 @@ class I3Res50(nn.Module):
         return x
 
 #-----------------------------------------------------------------------------------------------#
-def i3_res50_nl(num_classes, use_nl, weight_path):
-    
+def i3_res50_nl(num_classes, use_nl, weight_folder):
+
+    LINK_DOWNLOAD = {"I3Res50":"https://aimagelab.ing.unimore.it/files/c3d_pytorch/c3d.pickle",
+                     "I3Res50_nonlocal": ""}
+
     net = I3Res50(use_nl=use_nl)
+    if use_nl: 
+        link = LINK_DOWNLOAD["I3Res50_nonlocal"]
+        file_name = "i3res_nonlocal.pth"
+    else:
+        link = LINK_DOWNLOAD["I3Res50"]
+        file_name = "i3res_baseline.pth"
+
+    weight_path = os.path.join(weight_folder, file_name)
+
+    if not os.path.exists(weight_path):
+        print(f"Download the weight to {weight_path}")
+        response = request.urlretrieve(link,  weight_path)    
+
+
     net.load_state_dict(torch.load(weight_path))
+
+    print("Load pretrained weights successfully..")
+
 
     input_fc = net.fc.in_features
     net.fc = nn.Linear(input_fc, num_classes)
