@@ -1,21 +1,38 @@
 <!DOCTYPE html>
 <html>
-    <link rel="shortcut icon" href="#">
-    <link rel="stylesheet" type="text/css" href="static/css/main.css" 
+<head>
+    <!-- <link rel="shortcut icon" href="#"> -->
+    <link rel="stylesheet" type="text/css" href="static/css/main.css">
+    <title>Action Recognition</title> 
+</head>
 <body>
 
 <!-- <p>Click on the "Choose File" button to upload a file:</p>
 <input  id="file" type="file" onchange="selectVideo(this);"> -->
 <div id="container">
     <div id="video">
-        <p>Your video: </p>
         <video autoplay id="video" controls="controls" width="60%" height="60%" loop muted>
             <!-- <p>Your video here</p> -->
             <source id="source" type="video/mp4" src="staging/video/temp_video.mp4">
         </video>
         <br>
-        <br>
-        <button onclick="location.href='/'" type="button"> Go to homepage </button>
+        <p>Click on the "Choose File" button to upload a file:</p>
+        <form method="POST" action="/predict" id="myForm" enctype="multipart/form-data">
+
+            <label for="model_name">Choose a model type:</label>
+            <select id="model_name_dropdown" name="model_name" value="lrcn" onclick="getModelName()" form="myForm">
+                <option value="lrcn">LRCN</option>
+                <option value="c3d">C3D</option>
+            </select>
+            <br>
+            <br>
+            <input id="file" name="file" type="file">
+            <br>
+            <br>
+            <a href="/predict_result">
+                <input type="submit"/>
+            </a>
+        </form>
     </div>
 
     <div id="table1">

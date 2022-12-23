@@ -27,11 +27,6 @@ ground_true = None
 @app.get('/favicon.ico', include_in_schema=False)
 async def favicon():
     return FileResponse('./deployment/templates/static/img/favicon.ico')
-
-@app.get('/', response_class=HTMLResponse)
-# @app.get('/')
-def index(request: Request):
-    return templates.TemplateResponse("home.html", {"request": request})
     
 @app.post("/predict/")
 async def predict_action(
@@ -40,7 +35,7 @@ async def predict_action(
     file: UploadFile= File()
     ):
     global predict_label, softmax_res, ground_true
-    
+
     ground_true = file.filename.split('_')[1]
     res, sftm = None, None
     temp = NamedTemporaryFile(delete=False)
@@ -78,11 +73,13 @@ async def predict_action(
     predict_label['softmax'] = softmax_res
 
     # write_result_to_video(f"Predict: {predict_label.loc[1]['label']}")
-    return RedirectResponse('/predict_result', status_code=status.HTTP_303_SEE_OTHER) 
+    return RedirectResponse('/predict_home', status_code=status.HTTP_303_SEE_OTHER) 
 
-@app.get('/predict_result')
+@app.get('/predict_home')
 def predict_home(request: Request):
-
-    return templates.TemplateResponse("predict_home.html", {"request": request, "res": predict_label[['label', 'softmax']].values.tolist(), "heading":predict_label.columns, "ground_true": ground_true})
+    if predict_label is not None:
+        return templates.TemplateResponse("predict_home.html", {"request": request, "res": predict_label[['label', 'softmax']].values.tolist(), "heading":['Label', 'Prediction'], "ground_true": ground_true})
+    else:
+        return templates.TemplateResponse("predict_home.html", {"request": request, "res": [], "heading":['Label', 'Prediction'], "ground_true": 'None'})
 # cc = ColabCode(port=12000, code=False)
 # cc.run_app(app=app)
