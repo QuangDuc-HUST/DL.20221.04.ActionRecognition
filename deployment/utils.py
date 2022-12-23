@@ -34,17 +34,19 @@ def get_model(args):
     else:
         ARTIFACT_NAME = ARTIFACT_NAME_C3D
 
-    ## Un-comment when not have model weights 
-    # run = wandb.init(project="dl_action_recognition", entity="dandl", anonymous='allow')
-    # try:
-    #     artifact = run.use_artifact(f'dandl/dl_action_recognition/{ARTIFACT_NAME}:v0', type='model')
+    ## Download if not have weights
+    if glob.glob(f'./artifacts/{ARTIFACT_NAME}*/') == []:
 
-    #     print('Download started..')
-    #     model = artifact.get_path(MODEL_FILE).download()
-    #     print('Download completed!')
-    # except Exception as e:
-    #     print(traceback.format_exc()) 
-    # run.finish()
+        run = wandb.init(project="dl_action_recognition", entity="dandl", anonymous='allow')
+        try:
+            artifact = run.use_artifact(f'dandl/dl_action_recognition/{ARTIFACT_NAME}:v0', type='model')
+
+            print('Download started..')
+            model = artifact.get_path(MODEL_FILE).download()
+            print('Download completed!')
+        except Exception as e:
+            print(traceback.format_exc()) 
+        run.finish()
 
     # set everything
     utils.seed_everything(seed=73)
