@@ -5,13 +5,29 @@ from deployment.request_body import *
 # from colabcode import ColabCode
 import os
 import traceback
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi import Request
 
 # Declaring our FastAPI instance
 app = FastAPI()
 
-@app.get('/')
-def index():
-    return {'message': 'Go to /docs'}
+templates = Jinja2Templates(directory="deployment/templates")
+app.mount("/static", StaticFiles(directory="deployment/templates/static"), name="static")
+
+# @app.on_event('startup')
+# async def download_model_wandb():
+#     download_model()
+
+@app.get('/favicon.ico', include_in_schema=False)
+async def favicon():
+    return FileResponse('./deployment/templates/static/img/favicon.ico')
+
+@app.get('/', response_class=HTMLResponse)
+# @app.get('/')
+def index(request: Request):
+    return templates.TemplateResponse("home.html", {"request": request})
     
 @app.post("/predict/")
 async def predict_action(
@@ -27,19 +43,19 @@ async def predict_action(
         try:
             contents = file.file.read()
             with temp as f:
-                f.write(contents);
+                f.write(contents)
         except Exception as e:
             print(traceback.format_exc())
             print("There was an error uploading the file")
         finally:
             file.file.close()
         print("Reading completed")
-
+        convert_avi_to_mp4(temp.name)
         print('Predicting..')
         if model_name == 'lrcn':
-            res, sftm = predict(temp.name, LRCN_ARGS)
+            res, sftm = predict(temp.name, argparse.Namespace(**LRCN_ARGS))
         else:
-            res, sftm = predict(temp.name, C3D_ARGS)
+            res, sftm = predict(temp.name, argparse.Namespace(**C3D_ARGS))
         print('Predicted')
     except Exception as e:
         print(traceback.format_exc())
@@ -47,7 +63,7 @@ async def predict_action(
     finally:
         os.remove(temp.name)
     if res is not None:
-        return {"Prediction": ', '.join([str(i) for i in res.numpy()]),
+        return {"Prediction": ', '.join([str(i) for i in res.detach().numpy()]),
                 "Softmax": ', '.join([str(i) for i in sftm.detach().numpy()])}
     else:
         return {"Prediction": "None"}

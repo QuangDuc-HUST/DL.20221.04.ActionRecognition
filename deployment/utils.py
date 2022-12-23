@@ -4,62 +4,69 @@ from model.c3d import C3D
 import utils
 import cv2
 import torch
-import albumentations as A
 import os
 import random
-from albumentations.pytorch import ToTensorV2
 from torch.nn import functional as F
 import traceback
 from deployment.constants import *
 import glob
+import argparse
+import moviepy.editor as moviepy
+
 
 
 def get_default_agr(args):
-    args['restore_file'] = MODEL_FILE
-    args['num_workers'] = NUM_WORKERS
-    args['device'] = utils.get_training_device()
 
-    if args['model_name'] == "lrcn":
-        args['resize_to'] = RESIZE_LRCN
-    elif args['model_name'] == "c3d":
-        args['resize_to'] = RESIZE_C3D
+    args.restore_file = MODEL_FILE
+    args.num_workers = NUM_WORKERS
+    args.device = utils.get_training_device()
+
+    if args.model_name == "lrcn":
+        args.resize_to = RESIZE_LRCN
+    elif args.model_name == "c3d":
+        args.resize_to = RESIZE_C3D
     
     return args
 
+def download_model():
+    run = wandb.init(project="dl_action_recognition", entity="dandl", anonymous='allow')
+    try:
+        artifact = run.use_artifact(f'dandl/dl_action_recognition/{ARTIFACT_NAME_LRCN}:v0', type='model')
+
+        print('Download LRCN started..')
+        artifact.get_path(MODEL_FILE).download()
+        print('Download LRCN completed!')
+
+        artifact = run.use_artifact(f'dandl/dl_action_recognition/{ARTIFACT_NAME_C3D}:v0', type='model')
+
+        print('Download C3D started..')
+        artifact.get_path(MODEL_FILE).download()
+        print('Download C3D completed!')
+    except Exception as e:
+        print(traceback.format_exc()) 
+    run.finish()
 
 def get_model(args):
 
-    if args['model_name'] == 'lrcn':
+    if args.model_name == 'lrcn':
         ARTIFACT_NAME = ARTIFACT_NAME_LRCN
     else:
         ARTIFACT_NAME = ARTIFACT_NAME_C3D
 
-    ## Download if not have weights
-    if glob.glob(f'./artifacts/{ARTIFACT_NAME}*/') == []:
-
-        run = wandb.init(project="dl_action_recognition", entity="dandl", anonymous='allow')
-        try:
-            artifact = run.use_artifact(f'dandl/dl_action_recognition/{ARTIFACT_NAME}:v0', type='model')
-
-            print('Download started..')
-            model = artifact.get_path(MODEL_FILE).download()
-            print('Download completed!')
-        except Exception as e:
-            print(traceback.format_exc()) 
-        run.finish()
-
     # set everything
     utils.seed_everything(seed=73)
 
+    dict_args = vars(args)
+
     # Get model 
-    if args['model_name'] == "lrcn":
-        net = LRCN(**args,
+    if args.model_name == "lrcn":
+        net = LRCN(**dict_args,
                     n_class=NUM_CLASSES)
-    elif args['model_name'] == "c3d":
-        net = C3D(**args,
+    elif args.model_name == "c3d":
+        net = C3D(**dict_args,
                     n_class=NUM_CLASSES)
     
-    net.to(args['device'])
+    net.to(args.device)
 
     # Load weights
     load_checkpoint(glob.glob(f'./artifacts/{ARTIFACT_NAME}*/{MODEL_FILE}')[0], net)
@@ -99,15 +106,15 @@ def extract_frames_from_videos_lrcn(video_path, args, sequence_length=5):
             # frame = cv2.resize(frame, (height, width), interpolation = cv2.INTER_CUBIC)
             
             # cv2.imwrite(saved_path + "_" + str(counter+1) + '.png', frame)
-            frames.append(read_image(frame, get_transforms(args)['test_transforms']))
+            frames.append(read_image(frame, utils.get_transforms(args)['test_transforms']))
+
+            video_reader.release()
     except Exception as e:
         print(f"An error occured while extracting {sequence_length} frames")
         print(traceback.format_exc())
     print(f"Extracted {sequence_length} frames")
 
-    video_reader.release()
-
-    return torch.stack(frames, dim=0).to(args['device'], non_blocking=True)
+    return torch.stack(frames, dim=0).to(args.device, non_blocking=True)
 
 def extract_frames_from_videos_c3d(video_path, args, sequence_length=16):
 
@@ -132,16 +139,15 @@ def extract_frames_from_videos_c3d(video_path, args, sequence_length=16):
             ret, frame = video_reader.read()
             if not ret:
                 break;
-            frames.append(read_image(frame, get_transforms(args)['test_transforms']))
+            frames.append(read_image(frame, utils.get_transforms(args)['test_transforms']))
 
+        video_reader.release()
     except Exception as e:
         print(f"An error occured while extracting {sequence_length} frames")
         print(traceback.format_exc())
     print(f"Extracted {sequence_length} frames")
 
-    video_reader.release()
-
-    return torch.stack(frames, dim=0).to(args['device'], non_blocking=True)
+    return torch.stack(frames, dim=0).to(args.device, non_blocking=True)
 
 
 def predict(input, args):
@@ -149,7 +155,7 @@ def predict(input, args):
     args = get_default_agr(args)
     print(args)
 
-    if args['model_name'] == 'lrcn':
+    if args.model_name == 'lrcn':
         inputs = extract_frames_from_videos_lrcn(input, args)
     else:
         inputs = extract_frames_from_videos_c3d(input, args)
@@ -161,34 +167,6 @@ def predict(input, args):
         output = net(torch.unsqueeze(inputs, dim=0))
 
     return torch.topk(output, 10).indices, torch.topk(F.softmax(output.flatten(), dim=0), 10).values
-    
-def get_transforms(args):
-
-    train_transforms = A.Compose(
-        [
-            A.Resize(args['resize_to'], args['resize_to'], interpolation=cv2.INTER_CUBIC),
-            A.Normalize(),
-            ToTensorV2(),
-        ]
-        )
-    val_transforms = A.Compose(
-        [   
-            A.Resize(args['resize_to'], args['resize_to'], interpolation=cv2.INTER_CUBIC),
-            A.Normalize(),
-            ToTensorV2(),
-        ]
-        )
-    test_transforms = A.Compose(
-        [   
-            A.Resize(args['resize_to'], args['resize_to'], interpolation=cv2.INTER_CUBIC),
-            A.Normalize(),
-            ToTensorV2(),
-        ]
-        )
-        
-    return {'train_transforms': train_transforms, 
-            'val_transforms': val_transforms,
-            'test_transforms': test_transforms}
 
 
 def load_checkpoint(checkpoint, model, optimizer=None):
@@ -212,7 +190,13 @@ def load_checkpoint(checkpoint, model, optimizer=None):
 
     return checkpoint
 
+def convert_avi_to_mp4(filename):
 
+    clip = moviepy.VideoFileClip(filename=filename)
+    clip.write_videofile(f'./deployment/staging/video/temp_video.mp4')
+    clip.close()
+
+    print('done')
 
 
 

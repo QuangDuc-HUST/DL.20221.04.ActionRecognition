@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+    <link rel="shortcut icon" href="#">
+<body>
+
+<p>Click on the "Choose File" button to upload a file:</p>
+<input  id="file" type="file" onchange="selectVideo(this);">
+
+<video autoplay id="video" controls="controls">
+    <!-- <p>Your video here</p> -->
+    <source id="source" type="video/mp4">
+</video>
+
+</body>
+</html>
+
+<script>
+    function selectVideo(self) {
+        var file = self.files[0];
+        alter('gadg');
+        var reader = new FileReader();
+
+        reader.onload = function(e) {
+            var src = e.target.result;
+            var video = document.getElementById('video');
+            var source = document.getElementById('source');
+
+            source.setAttribute('src', src);
+            video.load();
+            video.play();
+        };
+
+        reader.readAsDataURL(file);
+        // alert("Read");
+    }
+
+</script>
