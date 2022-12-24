@@ -145,12 +145,12 @@ def predict_model(model, features, args):
     model.eval()
     with torch.no_grad():
         clip = features.to(args.device, non_blocking=True)
-        logit = model(clip.unsqueeze(0))
+        logit = model(clip.unsqueeze(0)).squeeze()
         output = torch.softmax(logit, dim=0)
     
     return output.detach().cpu().numpy()
 
-def predict(video_path, weight_path, dataset, model_name, sample_type, resize_to):
+def predict(video_path, weight_path, dataset, model_name, sample_type, resize_to, **kwargs):
 
     utils.seed_everything(seed=73)
 
@@ -165,7 +165,7 @@ def predict(video_path, weight_path, dataset, model_name, sample_type, resize_to
     args = Args(sample_type, resize_to)
 
 
-    net = load_model(dataset, model_name)
+    net = load_model(dataset, model_name, **kwargs)
 
     net.to(device)
 
@@ -182,4 +182,7 @@ def predict(video_path, weight_path, dataset, model_name, sample_type, resize_to
 if __name__ == '__main__':
     
     args = get_arg_parser()
-    predict(args.video_path, args.weight_path, args.dataset, args.model_name, args.sample_type, args.resize_to)
+    dict_args = vars(args)
+    output = predict(**dict_args)
+    print(output)
+    print(output.argmax())
