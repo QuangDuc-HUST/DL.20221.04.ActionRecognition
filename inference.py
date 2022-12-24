@@ -11,5 +11,6 @@ def local_predict():
     print(lb)
     print(sft)
 
+
 if __name__ == '__main__':
     local_predict()

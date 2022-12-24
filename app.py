@@ -25,23 +25,22 @@ ground_true = None
 # async def download_model_wandb():
 #     download_model()
 
+
 @app.get("/")
 async def main(request: Request):
     if predict_label is not None:
-        return templates.TemplateResponse("predict_home.html", {"request": request, "res": predict_label[['label', 'softmax']].values.tolist(), "heading":['Label', 'Prediction'], "ground_true": ground_true})
+        return templates.TemplateResponse("predict_home.html", {"request": request, "res": predict_label[['label', 'softmax']].values.tolist(), "heading": ['Label', 'Prediction'], "ground_true": ground_true})
     else:
-        return templates.TemplateResponse("predict_home.html", {"request": request, "res": [[None, 100]], "heading":['Label', 'Prediction'], "ground_true": 'None'})
+        return templates.TemplateResponse("predict_home.html", {"request": request, "res": [[None, 100]], "heading": ['Label', 'Prediction'], "ground_true": 'None'})
+
 
 @app.get('/favicon.ico', include_in_schema=False)
 async def favicon():
     return FileResponse('./deployment/templates/static/img/favicon.ico')
-    
+
+
 @app.post("/predict/")
-async def predict_action(
-    request: Request,
-    model_name: str = Form(default='lrcn'),
-    file: UploadFile= File()
-    ):
+async def predict_action(model_name: str = Form(default='lrcn'), file: UploadFile = File()):
     global predict_label, softmax_res, ground_true
 
     ground_true = file.filename.split('_')[1]
@@ -77,11 +76,11 @@ async def predict_action(
     predict_label = LABEL[LABEL.label_id.isin(predict_label)][['label']]
     predict_label.index = pd.RangeIndex(start=1, stop=11, step=1)
 
-    softmax_res = [round(i *100, 3) for i in sftm.detach().numpy().flatten().tolist()]
+    softmax_res = [round(i * 100, 3) for i in sftm.detach().numpy().flatten().tolist()]
     predict_label['softmax'] = softmax_res
 
     # write_result_to_video(f"Predict: {predict_label.loc[1]['label']}")
-    return RedirectResponse('/', status_code=status.HTTP_303_SEE_OTHER) 
+    return RedirectResponse('/', status_code=status.HTTP_303_SEE_OTHER)
 
 
 # cc = ColabCode(port=12000, code=False)

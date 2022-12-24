@@ -17,9 +17,3 @@ class C3d_request_body(BaseModel):
     drop_out: float = Form(default=0.5)
     pretrain: bool = Form(default=False)
     weight_path: str = Form(default='c3d.pickle')
-
-    
-
-    
-
-    
