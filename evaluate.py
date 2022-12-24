@@ -39,7 +39,7 @@ def get_arg_parser():
 
     # Module specific args
     ## which model to use
-    parser.add_argument('--model_name', type=str, required=True, choices=["lrcn", "c3d", "i3d"])
+    parser.add_argument('--model_name', type=str, required=True, choices=["lrcn", "c3d", "i3d", "non_local", "late_fusion"])
 
     ## Get the model name now 
     temp_args, _ = parser.parse_known_args()
