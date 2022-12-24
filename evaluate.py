@@ -11,16 +11,19 @@ from torch import nn
 
 from model.lrcn import LRCN
 from model.c3d import C3D
-from model.i3d import I3D, i3d_resnet50
-from model.non_local_i3res import I3Res50, i3_res50_nl
+from model.i3d import I3D
+from model.non_local_i3res import NonLocalI3Res
 from model.late_fusion import LateFusion
+
 from model.data_loader import ActionRecognitionDataWrapper 
 
 import utils
 from utils import WandbLogger
 
 def get_arg_parser():
-
+    """
+    Get options from CLI
+    """
     parser = argparse.ArgumentParser()
 
     # PROGRAM level args
@@ -30,8 +33,10 @@ def get_arg_parser():
 
 
     # DataModule specific args
-    parser.add_argument('--dataset', type=str, required=True, choices=['hmdb51', 'ucf101'])
-    parser.add_argument('--data_split', type=str, default='split1', choices=['split1', 'split2', 'split3'])
+    parser.add_argument('--dataset', type=str, required=True, 
+                        choices=['hmdb51', 'ucf101'])
+    parser.add_argument('--data_split', type=str, default='split1', 
+                        choices=['split1', 'split2', 'split3'])
     parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--num_workers', type=int, default=2)
     parser.add_argument('--clip_per_video', type=int, default=1)
@@ -39,7 +44,8 @@ def get_arg_parser():
 
     # Module specific args
     ## which model to use
-    parser.add_argument('--model_name', type=str, required=True, choices=["lrcn", "c3d", "i3d", "non_local", "late_fusion"])
+    parser.add_argument('--model_name', type=str, required=True, 
+                        choices=["lrcn", "c3d", "i3d", "non_local", "late_fusion"])
 
     ## Get the model name now 
     temp_args, _ = parser.parse_known_args()
@@ -63,7 +69,7 @@ def get_arg_parser():
         parser.add_argument('--resize_to', type=int, default=224)   # Maybe 224
 
     elif temp_args.model_name == "non_local":
-        parser = I3Res50.add_model_specific_args(parser)
+        parser = NonLocalI3Res.add_model_specific_args(parser)
         parser.add_argument('--resize_to', type=int, default=224) 
     
     elif temp_args.model_name == "late_fusion":
@@ -76,7 +82,9 @@ def get_arg_parser():
     return parser.parse_args()
 
 def val_evaluate(model, data_loader, criterion, metrics, args):
-    
+    """
+    Validation 1 epoch
+    """
     model.eval()
 
     acc_summ = 0
@@ -110,7 +118,9 @@ def val_evaluate(model, data_loader, criterion, metrics, args):
     return loss_mean, acc_mean
 
 def test_evaluate(model, test_data_loader, metrics, args):
-    
+    """
+    Test for one epoch
+    """
     model.eval()
 
     acc_summ = 0
@@ -187,10 +197,12 @@ if __name__ == '__main__':
         net = C3D(**dict_args,
                     n_class=NUM_CLASSES)
     elif args.model_name == "i3d":
-        net = i3d_resnet50(num_classes=NUM_CLASSES)
+        net = I3D(**dict_args,
+                    num_classes=NUM_CLASSES)
 
     elif args.model_name == "non_local":
-        net = i3_res50_nl(num_classes=NUM_CLASSES, use_nl=args.use_nl, weight_folder=args.weight_folder)
+        net = NonLocalI3Res(**dict_args,
+                            num_classes=NUM_CLASSES)
         
     elif args.model_name == "late_fusion":
         net = LateFusion(**dict_args, 

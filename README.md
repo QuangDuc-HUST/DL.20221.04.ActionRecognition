@@ -4,32 +4,22 @@
 
 **Note: All the code need to run in this directory.* 
 
-*All the code should be run on one of three platforms Linux OS, Google Colab (Pro Version) and Kaggle.*
+*All the code should be run on one of three platforms Linux OS, Google Colab, and Kaggle.*
 
 ---
 ## Project Structure 
 
 ```
 README.md               # Instruction for running the code
-build_dataset.py
+ckp/                    # Default checkpoint folder
+data/
+model/
+script/
+build_dataset.py        
 evaluate.py
 inference.py
 train.py
 utils.py
-ckp/                    # Default checkpoint folder
-data/
-    README.md
-    HMDB51/
-    UCF101/
-model/
-    README.md
-    utils/
-    c3d.py
-    lrcn.py
-    data_loader.py
-script/
-    googledown.sh
-    kaggle_config.sh
 ```
 *For more details, please read the README.md in each sub-directory.*
 
@@ -40,7 +30,12 @@ Our project has two versions: *Linux Environment* and *Google Colab environment*
 However, we highly recommend to use Google Colab version because of its convenience (our dataset is about 20GB -> 200GB after extracting frames from video)
 
 ### Requirements
-### Google Colab Version
+### Google Colab Version 
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](123)
+
+*We used Google Colab Pro Version for this project so some problems may be occurred if you training on the large ( >100GB ) extracted frame dataset.*
+
 Please follow the instructions on the Colab Version notebook
 ### Linux Environment
 

@@ -1,3 +1,9 @@
+#
+#
+# I3D Resnet3D backbones Pytorch implementation 
+# Source: https://github.com/PPPrior/i3d-pytorch/blob/master/models/backbones/resnet3d.py
+#
+
 import torch.nn as nn
 from torch.hub import load_state_dict_from_url
 
@@ -296,9 +302,9 @@ class ResNet3d(nn.Module):
                             self._inflate_bn_params(module, state_dict_r2d, name, inflated_param_names)
 
         # check if any parameters in the 2d checkpoint are not loaded
-        remaining_names = set(state_dict_r2d.keys()) - set(inflated_param_names)
-        if remaining_names:
-            print(f'These parameters in the 2d checkpoint are not loaded: {remaining_names}')
+        # remaining_names = set(state_dict_r2d.keys()) - set(inflated_param_names)
+        # if remaining_names:
+        #     print(f'These parameters in the 2d checkpoint are not loaded: {remaining_names}')
 
 
 def resnet3d(arch, progress=True, modality='RGB', pretrained2d=True, **kwargs):
