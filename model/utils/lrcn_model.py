@@ -58,6 +58,6 @@ class LSTM(nn.Module):
                             bidirectional=bidirectional)
 
     def forward(self, x):
-        output, _ = self.Lstm(x)
+        output, _ = self.LSTM(x)
         return output
 
