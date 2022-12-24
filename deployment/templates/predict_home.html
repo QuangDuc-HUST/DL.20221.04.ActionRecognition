@@ -3,19 +3,30 @@
 <head>
     <!-- <link rel="shortcut icon" href="#"> -->
     <link rel="stylesheet" type="text/css" href="static/css/main.css">
-    <title>Action Recognition</title> 
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <title>Human Action Recognition</title> 
 </head>
 <body>
 
 <!-- <p>Click on the "Choose File" button to upload a file:</p>
 <input  id="file" type="file" onchange="selectVideo(this);"> -->
-<div id="container">
-    <div id="video">
-        <video autoplay id="video" controls="controls" width="60%" height="60%" loop muted>
+<div id="container" class="row">
+    <br>
+    <div style="float: left;width: 2.5%;padding: 15px;"></div>
+    <div id="video" class="column1">
+        <video autoplay id="video" controls="controls" width="90%" height="90%" loop muted>
             <!-- <p>Your video here</p> -->
             <source id="source" type="video/mp4" src="staging/video/temp_video.mp4">
         </video>
         <br>
+        
+    </div>
+    <div style="float: left;width: 2.5%;padding: 15px;"></div>
+    <div id="table1" class="column2">
+        <!-- <div id="nega">
+            <img src="static/img/nigga.png" alt="nigga 2 thumbs up" width="200" >
+            <p>Author</p>
+        </div> -->
         <p>Click on the "Choose File" button to upload a file:</p>
         <form method="POST" action="/predict" id="myForm" enctype="multipart/form-data">
 
@@ -25,35 +36,34 @@
                 <option value="c3d">C3D</option>
             </select>
             <br>
-            <br>
-            <input id="file" name="file" type="file">
-            <br>
+            <input id="file" name="file" type="file" form="myForm" style="margin: auto;">
             <br>
             <a href="/predict_result">
                 <input type="submit"/>
             </a>
         </form>
-    </div>
-
-    <div id="table1">
-        <div id="nega">
-            <img src="static/img/nigga.png" alt="nigga 2 thumbs up" width="200" >
-            <p>Author</p>
-        </div>
-        <p style="color:red;text-decoration: underline;">True label: {{ ground_true }}</p>
-        <p>Trust me!!!!!!!!</p>
         <br>
+        <p style="color:red;text-decoration: underline;">True label: {{ ground_true }}</p>
         <table id="result">
             <tr>
                 {% for header in heading %}
-                <th> {{ header }} </th>
+                <th style="text-align: center;"> {{ header }} </th>
                 {% endfor %}
             </tr>
 
             {% for lb, s in res %}
                 <tr>
                     <td> {{ lb }} </td>
-                    <td><progress id="file" value="{{ s }}"  max="1"></progress></td>
+                    <td style="align-items: center; padding: 10px; width: 200px;">
+                        <!-- <div class="progress-bar" role="progressbar" aria-valuenow="{{s}}"
+                        aria-valuemin="0" aria-valuemax="100">
+                        {{s}} %
+                        </div> -->
+                        <div id="myturn">
+                            <span data-value="60" style="width: 60%;">{{s}}%</span>
+                            <progress value="{{s}}" max="100"></progress>
+                        </div>
+                    </td>
                 </tr>
             {% endfor %}
 
@@ -66,4 +76,9 @@
 </body>
 </html>
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script> -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+
+<script>
+</script>

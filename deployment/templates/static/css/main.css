@@ -1,15 +1,76 @@
 div#video {
-    text-align: left;
-    margin-left: 10%;
+    text-align: center;
+
+    border: solid;
+    border-color: black;
+    border-width: thin;
+    border-radius: 10px;
   }
 
 div#table1 {
-    margin-top: -45%;
-    margin-left: 70%;
+    /* margin-top: -35%;
+    margin-left: 65%; */
     text-align: center;
+    width: 30%;
+
+    border: solid;
+    border-color: black;
+    border-width: thin;
+    border-radius: 10px;
 }
 
 table#result {
   margin-left: auto;
   margin-right: auto;
+}
+
+th, td {
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+  padding: 15px;
+}
+
+.row {
+  margin-left:5%;
+  margin-right:5%;
+}
+  
+.column1 {
+  float:left;
+  width: 60%;
+  padding: 15px;
+}
+
+.column2 {
+  float: left;
+  width: 50%;
+  padding: 15px;
+}
+
+div.progress-bar {
+  width: 100%;top: 50%;left: 50%; border-radius: 5px;
+}
+/* td.progress-bar{
+} */
+
+progress {
+  -webkit-appearance: none;
+}
+
+progress::-webkit-progress-bar {
+  background-color: #666;
+}
+
+#myturn span {
+  position: absolute;
+  display: inline-block;
+  color: #fff;
+  text-align: right;
+}
+
+#myturn {
+  display: block;
+  position: relative;
+  width: 100%;
+  text-align: center;
 }
