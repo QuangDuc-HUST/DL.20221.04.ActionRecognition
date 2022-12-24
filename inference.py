@@ -112,59 +112,74 @@ def extract_features_from_video(video_path, type, transform, *args, **kwargs):
     video_reader.release()
     return torch.stack(frames, dim=0)
 
-def predict_model(model, features, *args, **kwargs):
-
-    model.eval()
-    with torch.no_grad():
-        clip = features.to(args.device, non_blocking=True)
-        output = torch.softmax(model(clip.unsqueeze(0)), dim=1)
-    
-    return output.detach().cpu().numpy()
-
-if __name__ == '__main__':
-    args = get_arg_parser()
-
-    args.device = utils.get_training_device()
-    dict_args = vars(args)
-
-    # set everything
-    utils.seed_everything(seed=73)
-
-     # Get NUM_CLASSES
-    if args.dataset == 'hmdb51':
+def load_model(dataset, model_name, **kwargs):
+    # Get NUM_CLASSES
+    if dataset == 'hmdb51':
         NUM_CLASSES = 51
     else:
         NUM_CLASSES = 101
 
-    # Get model 
-    if args.model_name == "lrcn":
-        net = LRCN(**dict_args,
+
+    if model_name == "lrcn":
+        net = LRCN(**kwargs,
                     n_class=NUM_CLASSES)
-    elif args.model_name == "c3d":
-        net = C3D(**dict_args,
+    elif model_name == "c3d":
+        net = C3D(**kwargs,
                     n_class=NUM_CLASSES)
-    elif args.model_name == "i3d":
-        net = I3D(**dict_args,
+    elif model_name == "i3d":
+        net = I3D(**kwargs,
                     num_classes=NUM_CLASSES)
 
-    elif args.model_name == "non_local":
-        net = NonLocalI3Res(**dict_args,
+    elif model_name == "non_local":
+        net = NonLocalI3Res(**kwargs,
                             num_classes=NUM_CLASSES)
         
-    elif args.model_name == "late_fusion":
-        net = LateFusion(**dict_args, 
+    elif model_name == "late_fusion":
+        net = LateFusion(**kwargs, 
                          n_class=NUM_CLASSES)
-      
-    net.to(args.device)
 
-    # Load weights
-    utils.load_checkpoint(args.weight_path, net)
+    return net
 
-    # Get features from images
-    features = extract_features_from_video(args.video_path, args.sample_type, utils.get_transforms(args))
+def predict_model(model, features, args):
 
-    output = predict_model(net, features)
+    model.eval()
+    with torch.no_grad():
+        clip = features.to(args.device, non_blocking=True)
+        logit = model(clip.unsqueeze(0))
+        output = torch.softmax(logit, dim=0)
+    
+    return output.detach().cpu().numpy()
 
-    print(output)
+def predict(video_path, weight_path, dataset, model_name, sample_type, resize_to):
 
-    print(output.argmax(dim=1))
+    utils.seed_everything(seed=73)
+
+    device = utils.get_training_device()
+
+    class Args():
+        def __init__(self, sample_type, resize_to):
+            self.sample_type = sample_type
+            self.resize_to = resize_to
+            self.device = device
+    
+    args = Args(sample_type, resize_to)
+
+
+    net = load_model(dataset, model_name)
+
+    net.to(device)
+
+    utils.load_checkpoint(weight_path, net)
+
+    transform = utils.get_transforms(args)['test_transforms']
+    
+    features = extract_features_from_video(video_path, args.sample_type, transform)
+
+    output = predict_model(net, features, args)
+
+    return output
+
+if __name__ == '__main__':
+    
+    args = get_arg_parser()
+    predict(args.video_path, args.weight_path, args.dataset, args.model_name, args.sample_type, args.resize_to)
