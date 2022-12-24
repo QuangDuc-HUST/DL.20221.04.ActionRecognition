@@ -160,3 +160,4 @@ dependencies:
     - tifffile==2022.10.10
     - tqdm==4.64.1
     - wandb==0.13.6
+    - kaggle
