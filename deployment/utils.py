@@ -45,7 +45,7 @@ def download_model():
     except Exception as e:
         print(traceback.format_exc()) 
 
-    run.delete()
+    # run.delete()
     run.finish()
 
 def get_model(args):
