@@ -1,198 +1,174 @@
-import os
-import json
-import random
-import shutil
-import subprocess
-
-import albumentations as A
-from albumentations.pytorch import ToTensorV2
+import wandb
+from model.lrcn import LRCN
+from model.c3d import C3D
+import utils
 import cv2
+import torch
+import os
+import random
+from torch.nn import functional as F
+import traceback
+from deployment.constants import *
+import glob
+import moviepy.editor as moviepy
 
-import numpy as np
-import torch 
 
 
-def get_transforms(args):
+def get_default_agr(args):
 
-    train_transforms = A.Compose(
-        [
-            A.Resize(args.resize_to, args.resize_to, interpolation=cv2.INTER_CUBIC),
-            A.Normalize(),
-            ToTensorV2(),
-        ]
-        )
-    val_transforms = A.Compose(
-        [   
-            A.Resize(args.resize_to, args.resize_to, interpolation=cv2.INTER_CUBIC),
-            A.Normalize(),
-            ToTensorV2(),
-        ]
-        )
-    test_transforms = A.Compose(
-        [   
-            A.Resize(args.resize_to, args.resize_to, interpolation=cv2.INTER_CUBIC),
-            A.Normalize(),
-            ToTensorV2(),
-        ]
-        )
-        
-    return {'train_transforms': train_transforms, 
-            'val_transforms': val_transforms,
-            'test_transforms': test_transforms}
+    args.restore_file = MODEL_FILE
+    args.num_workers = NUM_WORKERS
+    args.device = utils.get_training_device()
 
-class RunningAverage():
-    """A simple class that maintains the running average of a quantity
+    if args.model_name == "lrcn":
+        args.resize_to = RESIZE_LRCN
+    elif args.model_name == "c3d":
+        args.resize_to = RESIZE_C3D
     
-    Example:
-    ```
-    loss_avg = RunningAverage()
-    loss_avg.update(2)
-    loss_avg.update(4)
-    loss_avg() = 3
-    ```
-    """
-    def __init__(self):
-        self.steps = 0
-        self.total = 0
+    return args
+
+def download_model():
+    api = wandb.Api()
+
+    try:
+        artifact = api.artifact(f'dandl/dl_action_recognition/{ARTIFACT_NAME_LRCN}:latest', type='model')
+
+        print('Download LRCN started..')
+        artifact.get_path(MODEL_FILE).download()
+        print('Download LRCN completed!')
+
+        artifact = api.artifact(f'dandl/dl_action_recognition/{ARTIFACT_NAME_C3D}:latest', type='model')
+
+        print('Download C3D started..')
+        artifact.get_path(MODEL_FILE).download()
+        print('Download C3D completed!')
+    except Exception as e:
+        print(traceback.format_exc()) 
     
-    def update(self, val):
-        self.total += val
-        self.steps += 1
+
+def get_model(args):
+
+    if args.model_name == 'lrcn':
+        ARTIFACT_NAME = ARTIFACT_NAME_LRCN
+    else:
+        ARTIFACT_NAME = ARTIFACT_NAME_C3D
+
+    # set everything
+    utils.seed_everything(seed=73)
+
+    dict_args = vars(args)
+
+    # Get model 
+    if args.model_name == "lrcn":
+        net = LRCN(**dict_args,
+                    n_class=NUM_CLASSES)
+    elif args.model_name == "c3d":
+        net = C3D(**dict_args,
+                    n_class=NUM_CLASSES)
     
-    def __call__(self):
-        return self.total/float(self.steps)
+    net.to(args.device)
 
-
-class WandbLogger():
-    def __init__(self, args):
-        self.args = args
-
-        import wandb
-        self._wandb = wandb
-
-
-        # Initialise a W&B run
-        if self._wandb.run is None:
-
-            self._wandb.login(anonymous='must')
-            self._wandb.init(
-                project=args.project,
-                notes=args.notes,
-                config=args
-            )
+    # Load weights
+    load_checkpoint(glob.glob(f'./artifacts/{ARTIFACT_NAME}*/{MODEL_FILE}')[0], net)
     
-    def set_steps(self):
+    return net
 
-        self._wandb.define_metric('trainer/global_step')
-
-        self._wandb.define_metric('train/*', step_metric='trainer/global_step')
-        self._wandb.define_metric('val/*', step_metric='trainer/epoch')
-
-
-    def log_checkpoints(self):
-
-        print("Uploading checkpoints to wandb ...")
-
-        ckp_dir = self.args.ckp_dir
-
-        model_artifact = self._wandb.Artifact(
-            self._wandb.run.id + '_model', type='model'
-        )
-
-        model_artifact.add_dir(ckp_dir)
-
-        self._wandb.log_artifact(model_artifact, aliases=["latest"])
+def read_image(img, transform):
         
-    def log_info(self):
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    
+    if transform is not None:
+        img = transform(image=img)['image']
+    
+    return img
+    
+def extract_frames_from_videos_lrcn(video_path, args, sequence_length=5):
+
+    frames = []
+    print(f"Start extract {sequence_length} frames..")
+    try:
         
-        log_dir = self.args.ckp_dir
-        
-        if not os.path.exists(log_dir):
-            print("Checkpoint Directory does not exist! Making directory {}".format(log_dir))
-            os.makedirs(log_dir)
-
-        wandb_log_json_path = os.path.join(log_dir, 'wandb_info.json')
-
-
-        dict_info = { 'id': self._wandb.run.id,
-                      'path': self._wandb.run.path,
-                      'url': self._wandb.run.url,
-                      'artifact_path': self._wandb.run.path + '_model:latest'   # Update the lastest :D
-                    }
-        # Write
-        with open(wandb_log_json_path, 'w') as f:  
-            json.dump(dict_info, f, indent=4)
-
-    @staticmethod
-    def save_metrics(metrics, args):
-        """
-        Update the run summary and upload test metrics into the artifact
-        """    
-        #get wandb_info
-        with open(os.path.join(args.ckp_dir, 'wandb_info.json')) as f:
-            wandb_info = json.load(f)
+        #Read the Video
+        video_reader = cv2.VideoCapture(video_path)
+        #get the frame count
+        frame_count=int(video_reader.get(cv2.CAP_PROP_FRAME_COUNT))
+        #Calculate the interval after which frames will be added to the list
+        skip_interval = max(int(frame_count/sequence_length), 1)
+        #iterate through video frames
+        for counter in range(sequence_length):
+            #Set the current frame postion of the video
+            video_reader.set(cv2.CAP_PROP_POS_FRAMES, counter * skip_interval)
+            #Read the current frame 
+            ret, frame = video_reader.read()
+            if not ret:
+                break;
+            #Resize the image
+            # frame = cv2.resize(frame, (height, width), interpolation = cv2.INTER_CUBIC)
             
+            # cv2.imwrite(saved_path + "_" + str(counter+1) + '.png', frame)
+            frames.append(read_image(frame, utils.get_transforms(args)['test_transforms']))
 
-        import wandb
-        # get API
-        api = wandb.Api()
-        # get run
-        wandb_run = api.run(wandb_info['path'])
+            video_reader.release()
+    except Exception as e:
+        print(f"An error occured while extracting {sequence_length} frames")
+        print(traceback.format_exc())
+    print(f"Extracted {sequence_length} frames")
 
-        for metric, value in metrics.items():
-            wandb_run.summary[f'test/{metric}'] = value
+    return torch.stack(frames, dim=0).to(args.device, non_blocking=True)
+
+def extract_frames_from_videos_c3d(video_path, args, sequence_length=16):
+
+    frames = []
+    print(f"Start extract {sequence_length} frames..")
+    try:
+        video_reader = cv2.VideoCapture(video_path)
+        #get the frame count
+        frame_count=int(video_reader.get(cv2.CAP_PROP_FRAME_COUNT))
         
-        wandb_run.summary.update()
+        #Calculate the starting point
+        if frame_count < sequence_length:
+            raise NotImplementedError
+            
+        start_point = max(random.randint(0, frame_count-sequence_length-2), 0)
+        
+        #iterate through video frames
+        for counter in range(sequence_length):
+            #Set the current frame postion of the video
+            video_reader.set(cv2.CAP_PROP_POS_FRAMES, start_point + counter)
+            #Read the current frame 
+            ret, frame = video_reader.read()
+            if not ret:
+                break;
+            frames.append(read_image(frame, utils.get_transforms(args)['test_transforms']))
 
-def runcmd(cmd, is_wait=False, *args, **kwargs):
-    # function for running command
-    process = subprocess.Popen(
-        cmd,
-        text = True,
-        shell = True
-    )
-    
-    if is_wait:
-        process.wait()
+        video_reader.release()
+    except Exception as e:
+        print(f"An error occured while extracting {sequence_length} frames")
+        print(traceback.format_exc())
+    print(f"Extracted {sequence_length} frames")
 
-def seed_everything(seed=73):
-    random.seed(seed)
-    os.environ["PYTHONHASHSEED"] = str(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.backends.cudnn.deterministic = True
-
-
-def save_dict_to_json(d, json_path):
-
-    with open(json_path, 'w') as f:
-        d = {k: float(v) for k, v in d.items()}
-        json.dump(d, f, indent=4)
+    return torch.stack(frames, dim=0).to(args.device, non_blocking=True)
 
 
-def save_checkpoint(state, is_best, checkpoint):
-    """Saves model and training parameters at checkpoint + 'last.pth'. If is_best==True, also saves
-    checkpoint + 'best.pth'
-    
-    Args:
-        state: (dict) contains model's state_dict, may contain other keys such as epoch, optimizer state_dict 
-            (epoch, state_dict, optimizer)
-        is_best: (bool) True if it is the best model seen till now
-        checkpoint: (string) folder where parameters are to be saved
-    """
-    file_path = os.path.join(checkpoint, 'last.pth')
+def predict(input, args):
 
-    if not os.path.exists(checkpoint):
-        print("Checkpoint Directory does not exist! Making directory {}".format(checkpoint))
-        os.makedirs(checkpoint)
-    
-    print(f"Saving checkpoint...")
-    torch.save(state, file_path)
+    args = get_default_agr(args)
+    print(args)
 
-    if is_best:
-        shutil.copyfile(file_path, os.path.join(checkpoint, 'best.pth'))
-    
+    if args.model_name == 'lrcn':
+        inputs = extract_frames_from_videos_lrcn(input, args)
+    else:
+        inputs = extract_frames_from_videos_c3d(input, args)
+    print(inputs.shape)
+    net = get_model(args)
+
+    with torch.no_grad():
+        net.eval()
+        output = net(torch.unsqueeze(inputs, dim=0))
+
+    return torch.topk(output, 10).indices, torch.topk(F.softmax(output.flatten(), dim=0), 10).values
+
+
 def load_checkpoint(checkpoint, model, optimizer=None):
     """Loads model parameters (state_dict) from file_path. If optimizer is provided, loads state_dict of
     optimizer assuming it is present in checkpoint.
@@ -206,10 +182,7 @@ def load_checkpoint(checkpoint, model, optimizer=None):
     if not os.path.exists(checkpoint):
         raise("File doesn't exist {}".format(checkpoint))
     
-    print(f"Load checkpoint from {checkpoint}")
-
-    checkpoint = torch.load(checkpoint)
-    
+    checkpoint = torch.load(checkpoint, map_location=torch.device('cpu'))
     model.load_state_dict(checkpoint['state_dict']) #maybe epoch as well
 
     if optimizer:
@@ -217,15 +190,52 @@ def load_checkpoint(checkpoint, model, optimizer=None):
 
     return checkpoint
 
+def convert_avi_to_mp4(filename):
 
-def get_training_device():
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print("We are on", device, "..")
-    return device
+    clip = moviepy.VideoFileClip(filename=filename)
+    clip.write_videofile('./deployment/staging/video/temp_video.mp4')
+    clip.close()
 
-def acc_metrics(preds, targets):
-    return (preds.argmax(1) == targets).sum() / preds.shape[0]
+    print('done')
+
+def write_result_to_video(message):
+
+    cap = cv2.VideoCapture('./deployment/staging/video/temp_video.mp4')
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter('./deployment/staging/video/temp_video.mp4', 
+                            fourcc=fourcc,
+                            fps=cap.get(cv2.CAP_PROP_FPS),
+                            frameSize=(int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
+                                int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))),
+                            )
+
+    while cap.isOpened():
+        
+        # Capture frames in the video
+        
+        ret, frame = cap.read()
+        # describe the type of font
+        # to be used.
+        font = cv2.FONT_HERSHEY_SIMPLEX
+
+        # Use putText() method for
+        # inserting text on video
+        cv2.putText(frame,
+                    message,
+                    (20, 40),
+                    font, 0.6,
+                    (0, 0, 255), 1)
+        out.write(frame)
+        print(1)
+        # Display the resulting frame
+        # cv2.imshow('video', frame)
+        if not ret:
+            break
+
+    # release the cap object
+    print(cap.get(cv2.CAP_PROP_FPS))
     
-def get_lr(optimizer):
-    for param_group in optimizer.param_groups:
-        return param_group['lr']
+    cap.release()
+    out.release()
+    # close all windows
+    # cv2.destroyAllWindows()
