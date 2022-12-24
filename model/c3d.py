@@ -15,7 +15,7 @@ class C3D(c3d_model.C3D):
         parser = parent_parser.add_argument_group("C3D")
         parser.add_argument("--drop_out", type=float, default=0.5)
         parser.add_argument("--pretrain", action='store_false')
-        parser.add_argument("--weight_path", type=str, default='c3d.pickle')
+        parser.add_argument("--weight_path", type=str, default='./model/weights/c3d_weights.pickle')
         return parent_parser
 
     def __init__(self, drop_out, n_class, pretrain, weight_path, *args, **kwargs):
