@@ -44,6 +44,8 @@ def download_model():
         print('Download C3D completed!')
     except Exception as e:
         print(traceback.format_exc()) 
+
+    run.delete()
     run.finish()
 
 def get_model(args):
@@ -153,13 +155,11 @@ def extract_frames_from_videos_c3d(video_path, args, sequence_length=16):
 def predict(input, args):
 
     args = get_default_agr(args)
-    print(args)
 
     if args.model_name == 'lrcn':
         inputs = extract_frames_from_videos_lrcn(input, args)
     else:
         inputs = extract_frames_from_videos_c3d(input, args)
-    print(inputs.shape)
     net = get_model(args)
 
     with torch.no_grad():
