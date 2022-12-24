@@ -17,7 +17,7 @@ def get_dataset_arg():
     parser.add_argument('--google', action="store_true")
     parser.add_argument('--google_access_key', type=str, default='')
     parser.add_argument('--dataset', required=True, type=str, choices=['ucf101', 'hmdb51'])
-    parser.add_argument('--process_type', type=str, default='5_frames_uniform', choices=['5_frames_uniform', '5_frames_conse_rand', '16_frames_conse_rand'] )
+    parser.add_argument('--process_type', type=str, default='5_frames_uniform', choices=['5_frames_uniform', '16_frames_conse_rand'] )
     
     return parser.parse_args()
 
