@@ -39,6 +39,9 @@ However, we highly recommend to use Google Colab version because of its convenie
 Please follow the instructions on the Colab Version notebook
 ### Linux Environment ([Miniconda](https://docs.conda.io/en/latest/miniconda.html))
 ```
+    git clone https://github.com/QuangDuc-HUST/DL.20221.04.ActionRecognition
+    cd DL.20221.04.ActionRecognition/
+
     conda env create -f environment.yml
     conda activate dlenv
 ```
@@ -64,7 +67,6 @@ Please follow the instructions on the Colab Version notebook
 #### `Evaluate` the model on the test set
 ```
     python evaluate.py --model_name late_fusion --batch_size 32 --data_dir './data/UCF101/5_frames_uniform/' --dataset 'ucf101' 
-
 ```
 
 ## Advanced training use
