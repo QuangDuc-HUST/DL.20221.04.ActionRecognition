@@ -1,7 +1,10 @@
+#
+# API for LRCN
+#
+
 from .utils import lrcn_model
 
-
-class LRCN(lrcn_model.ConvLstm):
+class LRCN(lrcn_model.ConvLSTM):
     @staticmethod
     def add_model_specific_args(parent_parser):
         parser = parent_parser.add_argument_group("LRCN")

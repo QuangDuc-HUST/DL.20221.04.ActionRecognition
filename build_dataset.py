@@ -1,6 +1,8 @@
 #
-# File for build the dataset
+#
+# Building the dataset
 # 
+#
 import os
 import argparse
 
@@ -17,7 +19,8 @@ def get_dataset_arg():
     parser.add_argument('--google', action="store_true")
     parser.add_argument('--google_access_key', type=str, default='')
     parser.add_argument('--dataset', required=True, type=str, choices=['ucf101', 'hmdb51'])
-    parser.add_argument('--process_type', type=str, default='5_frames_uniform', choices=['5_frames_uniform', '16_frames_conse_rand'] )
+    parser.add_argument('--process_type', type=str, default='5_frames_uniform', 
+                        choices=['5_frames_uniform', '16_frames_conse_rand', '5_clips_16_frames'] )
     
     return parser.parse_args()
 
@@ -48,6 +51,9 @@ def get_data_kaggle_id(dataset, process_type):
 
 if __name__ == '__main__':
     args = get_dataset_arg()
+
+    if args.process_type == '5_clips_16_frames':
+        raise("Big file !Please using Google Colab version and download in google colab instead.")
 
     if (args.google and args.kaggle) or (not args.kaggle and not args.google):
         raise("Please choose one google or kaggle for download.")
@@ -86,8 +92,6 @@ if __name__ == '__main__':
         download_id = get_data_kaggle_id(args.dataset, args.process_type)
         runcmd(f'kaggle datasets download -d {download_id} -p "./temp/"', is_wait=True)
 
-
-    
     print("Unzip the dataset...")
 
     if not os.path.exists(os.path.join('./temp', zip_file_name)):
@@ -95,7 +99,7 @@ if __name__ == '__main__':
 
 
     runcmd(f'unzip -qo ./temp/{zip_file_name} -d {final_data_folder} \
-            && rm -rf ./temp/{zip_file_name} \
+            && rm -rf ./temp/                                        \
             && mv {final_data_folder}/kaggle/temp/*/* {final_data_folder}/ \
             && rm -rf {final_data_folder}/kaggle', 
             is_wait=True)
