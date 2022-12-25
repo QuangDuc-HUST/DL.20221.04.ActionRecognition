@@ -1,50 +1,39 @@
-# Importing Necessary modules
+from fastapi import APIRouter
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import FileResponse, RedirectResponse
+from fastapi import Request, status, UploadFile, Form, File
 from tempfile import NamedTemporaryFile
-from deployment.utils import *
-from deployment.request_body import *
-# from colabcode import ColabCode
-import os
+from app.core.utils.utils import *
 import traceback
 import argparse
-from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi import Request, status
+import os
+import glob
 
-# Declaring our FastAPI instance
-app = FastAPI()
 
-templates = Jinja2Templates(directory="deployment/templates")
-app.mount("/static", StaticFiles(directory="deployment/templates/static"), name="static")
-app.mount("/staging", StaticFiles(directory="deployment/staging"), name="staging")
+router = APIRouter()
+
+templates = Jinja2Templates(directory="app/templates")
 
 predict_label = None
 softmax_res = None
-ground_true = None
 
-# @app.on_event('startup')
-# async def download_model_wandb():
-#     download_model()
-
-
-@app.get("/")
+@router.get("/")
 async def main(request: Request):
     if predict_label is not None:
-        return templates.TemplateResponse("predict_home.html", {"request": request, "res": predict_label[['label', 'softmax']].values.tolist(), "heading": ['Label', 'Prediction'], "ground_true": ground_true})
+        return templates.TemplateResponse("predict_home.html", {"request": request, "res": predict_label[['label', 'softmax']].values.tolist(), "heading": ['Label', 'Prediction']})
     else:
-        return templates.TemplateResponse("predict_home.html", {"request": request, "res": [[None, 100]], "heading": ['Label', 'Prediction'], "ground_true": 'None'})
+        return templates.TemplateResponse("predict_home.html", {"request": request, "res": [[None, 100]], "heading": ['Label', 'Prediction']})
 
 
-@app.get('/favicon.ico', include_in_schema=False)
+@router.get('/favicon.ico', include_in_schema=False)
 async def favicon():
-    return FileResponse('./deployment/templates/static/img/favicon.ico')
+    return FileResponse('./app/templates/static/img/favicon.ico')
 
 
-@app.post("/predict/")
+@router.post("/predict/")
 async def predict_action(model_name: str = Form(default='lrcn'), file: UploadFile = File()):
-    global predict_label, softmax_res, ground_true
+    global predict_label, softmax_res
 
-    ground_true = file.filename.split('_')[1]
     res, sftm = None, None
     temp = NamedTemporaryFile(delete=False)
 
@@ -60,12 +49,26 @@ async def predict_action(model_name: str = Form(default='lrcn'), file: UploadFil
         finally:
             file.file.close()
         print("Reading completed")
+
         convert_avi_to_mp4(temp.name)
+
         print('Predicting..')
+
         if model_name == 'lrcn':
             res, sftm = predict(temp.name, argparse.Namespace(**LRCN_ARGS))
-        else:
+
+        elif model_name == 'c3d':
             res, sftm = predict(temp.name, argparse.Namespace(**C3D_ARGS))
+
+        elif model_name == 'i3d':
+            res, sftm = predict(temp.name, argparse.Namespace(**I3D_ARGS))
+
+        elif model_name == 'non_local':
+            res, sftm = predict(temp.name, argparse.Namespace(**NON_LOCAL_ARGS))
+        
+        else:
+            res, sftm = predict(temp.name, argparse.Namespace(**LATE_FUSION_ARGS))
+
         print('Predicted')
     except Exception as e:
         print(traceback.format_exc())
@@ -82,7 +85,3 @@ async def predict_action(model_name: str = Form(default='lrcn'), file: UploadFil
 
     # write_result_to_video(f"Predict: {predict_label.loc[1]['label']}")
     return RedirectResponse('/', status_code=status.HTTP_303_SEE_OTHER)
-
-
-# cc = ColabCode(port=12000, code=False)
-# cc.run_app(app=app)
