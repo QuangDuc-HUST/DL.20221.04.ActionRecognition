@@ -24,7 +24,7 @@ class NonLocalI3Res(non_local_i3res_model.I3Res50):
                 *args,
                 **kwargs):
 
-        super().__init__(block, layers, num_classes, use_nl)
+        super().__init__(block=block, layers=layers, use_nl=use_nl)
         
         LINK_DOWNLOAD = {"I3Res50":         "https://transfer.sh/YL1fAh/i3res_baseline.pth",
                          "I3Res50_nonlocal":"https://transfer.sh/PhrU8U/i3res_nonlocal.pth"}
