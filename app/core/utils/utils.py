@@ -17,8 +17,6 @@ import inference
 
 def get_default_agr(args):
 
-    args.restore_file = WEIGHT_FILE
-    args.num_workers = NUM_WORKERS
     args.device = utils.get_training_device()
     args.weight_path = glob.glob(f'./artifacts/*{args.model_name.replace("_", "-")}*/*.pth')[0]
     args.dataset = DATASET_101
