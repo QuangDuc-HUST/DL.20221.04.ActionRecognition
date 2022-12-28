@@ -22,7 +22,11 @@ def get_transforms(args):
 
     train_transforms = A.ReplayCompose(
         [
-            A.Resize(args.resize_to, args.resize_to, interpolation=cv2.INTER_CUBIC),
+            A.RandomResizedCrop(args.resize_to, args.resize_to, interpolation=cv2.INTER_CUBIC),
+            # A.Resize(args.resize_to, args.resize_to, interpolation=cv2.INTER_CUBIC),
+            A.HorizontalFlip(p=0.5),
+            A.VerticalFlip(p=0.2),
+            A.ColorJitter(),
             A.Normalize(),
             ToTensorV2(),
         ]
@@ -67,19 +71,6 @@ class RunningAverage():
     
     def __call__(self):
         return self.total/float(self.steps)
-
-def download_weights(weight_folder, weight_file):
-    try:
-        import wandb 
-    except:
-        raise("Please install wandb for downloading weights")
-    
-    api = wandb.Api()
-    
-    artifact = api.artifact('dandl/dl_action_recognition/weights_collection:v0', type='weights')
-
-    artifact.get_path(weight_file).download(weight_folder)
-    
 
 class WandbLogger():
     def __init__(self, args):

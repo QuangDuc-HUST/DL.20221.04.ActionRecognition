@@ -5,7 +5,7 @@ import torch
 from torch import nn
 
 from .utils import c3d_model
-from ..utils import download_weights
+from .utils.utils import download_weights
 
 
 
