@@ -20,14 +20,14 @@ import torch
 
 def get_transforms(args):
 
-    train_transforms = A.Compose(
+    train_transforms = A.ReplayCompose(
         [
             A.Resize(args.resize_to, args.resize_to, interpolation=cv2.INTER_CUBIC),
             A.Normalize(),
             ToTensorV2(),
         ]
         )
-    val_transforms = A.Compose(
+    val_transforms = A.ReplayCompose(
         [   
             A.Resize(args.resize_to, args.resize_to, interpolation=cv2.INTER_CUBIC),
             A.Normalize(),
@@ -41,7 +41,7 @@ def get_transforms(args):
             ToTensorV2(),
         ]
         )
-        
+
     return {'train_transforms': train_transforms, 
             'val_transforms': val_transforms,
             'test_transforms': test_transforms}

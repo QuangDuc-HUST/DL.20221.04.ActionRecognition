@@ -3,11 +3,13 @@ import os
 import pandas as pd
 
 import cv2
+import albumentations as A
 
 from sklearn import model_selection
 
 import torch
 from torch.utils.data import Dataset, DataLoader
+
 
 class ActionRecognitionDataset(Dataset):
     """
@@ -25,21 +27,27 @@ class ActionRecognitionDataset(Dataset):
     def _get_full_path(self, video_folder_path):
         return os.path.join(self.data_dir, video_folder_path)
     
-    def _read_image(self, image_path):
+    def _read_image(self, image_path, data_replay):
         
         img = cv2.imread(image_path)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         
         if self.transform is not None:
-            img = self.transform(image=img)['image']
+            img = A.ReplayCompose.replay(data_replay, image=img)['image']
         
         return img
     
     def _read_one_clip(self, folder_path):
         
         lst_imgs = sorted(os.listdir(folder_path))
+
+        data_replay = None
+        # Read the first img
+        if self.transform is not None:
+            first_img = self._read_image(os.path.join(folder_path, lst_imgs[0]))
+            data_replay = self.transform(image=first_img)['replay']
         
-        imgs = torch.stack([self._read_image(os.path.join(folder_path, path)) for path \
+        imgs = torch.stack([self._read_image(os.path.join(folder_path, path), data_replay) for path \
                             in lst_imgs],
                            dim=0)
 
