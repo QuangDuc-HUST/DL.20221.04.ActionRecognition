@@ -44,7 +44,8 @@ class ActionRecognitionDataset(Dataset):
         data_replay = None
         # Read the first img
         if self.transform is not None:
-            first_img = self._read_image(os.path.join(folder_path, lst_imgs[0]))
+            first_img = cv2.imread(os.path.join(folder_path, lst_imgs[0]))
+            first_img = cv2.cvtColor(first_img, cv2.COLOR_BGR2RGB)
             data_replay = self.transform(image=first_img)['replay']
         
         imgs = torch.stack([self._read_image(os.path.join(folder_path, path), data_replay) for path \

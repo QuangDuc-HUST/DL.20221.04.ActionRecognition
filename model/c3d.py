@@ -1,11 +1,11 @@
 import os 
-from urllib import request
 
 
 import torch
 from torch import nn
 
 from .utils import c3d_model
+from ..utils import download_weights
 
 
 
@@ -22,13 +22,11 @@ class C3D(c3d_model.C3D):
         super(C3D, self).__init__(drop_out=drop_out)
         
         if pretrain:
-            file_name = "c3d_weights.pickle"
+            file_name = "c3d.pickle"
             weight_path = os.path.join(weight_folder, file_name)
             if not os.path.exists(weight_path):
                 print("Download C3D pretrained on Sports1M..")
-                LINK_DOWNLOAD = "https://aimagelab.ing.unimore.it/files/c3d_pytorch/c3d.pickle"
-                response = request.urlretrieve(LINK_DOWNLOAD,  weight_path)
-
+                download_weights(weight_folder, file_name)
             self.load_state_dict(torch.load(weight_path))
 
             print("Load C3D pretrained weights successfully.")
