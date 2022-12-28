@@ -14,9 +14,9 @@ app.mount("/static", StaticFiles(directory="app/templates/static"), name="static
 app.mount("/staging", StaticFiles(directory="app/staging"), name="staging")
 
 
-@app.on_event('startup')
-async def download_model_wandb():
-    download_model()
+# @app.on_event('startup')
+# async def download_model_wandb():
+#     download_model()
 
 @app.on_event("shutdown")
 def shutdown_event():

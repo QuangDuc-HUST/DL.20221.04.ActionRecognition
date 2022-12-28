@@ -4,6 +4,7 @@ from fastapi.responses import FileResponse, RedirectResponse
 from fastapi import Request, status, UploadFile, Form, File
 from tempfile import NamedTemporaryFile
 from app.core.utils.utils import *
+from app.core.constants.constants import *
 import traceback
 import argparse
 import os
@@ -76,12 +77,14 @@ async def predict_action(model_name: str = Form(default='lrcn'), file: UploadFil
     finally:
         os.remove(temp.name)
 
+    print(res)
+
     predict_label = res.detach().numpy().flatten().tolist()
-    predict_label = LABEL[LABEL.label_id.isin(predict_label)][['label']]
+    predict_label = LABEL.merge(pd.DataFrame({'label_id': predict_label, 'softmax': [round(i * 100, 3) for i in sftm.detach().numpy().flatten().tolist()]}), on='label_id', how='inner')
+    predict_label = predict_label.sort_values(by="softmax", ascending=False)
     predict_label.index = pd.RangeIndex(start=1, stop=11, step=1)
 
-    softmax_res = [round(i * 100, 3) for i in sftm.detach().numpy().flatten().tolist()]
-    predict_label['softmax'] = softmax_res
+    print(predict_label)
 
     # write_result_to_video(f"Predict: {predict_label.loc[1]['label']}")
     return RedirectResponse('/', status_code=status.HTTP_303_SEE_OTHER)
