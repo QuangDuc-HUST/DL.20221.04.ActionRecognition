@@ -33,14 +33,16 @@ def get_transforms(args):
         )
     val_transforms = A.ReplayCompose(
         [   
-            A.Resize(args.resize_to, args.resize_to, interpolation=cv2.INTER_CUBIC),
+            # A.Resize(args.resize_to, args.resize_to, interpolation=cv2.INTER_CUBIC),
+            A.CenterCrop(args.resize_to, args.resize_to),
             A.Normalize(),
             ToTensorV2(),
         ]
         )
     test_transforms = A.Compose(
         [   
-            A.Resize(args.resize_to, args.resize_to, interpolation=cv2.INTER_CUBIC),
+            A.CenterCrop(args.resize_to, args.resize_to),
+            # A.Resize(args.resize_to, args.resize_to, interpolation=cv2.INTER_CUBIC),
             A.Normalize(),
             ToTensorV2(),
         ]
