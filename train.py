@@ -6,6 +6,10 @@ import os
 import argparse
 from tqdm import tqdm
 
+import warnings
+warnings.simplefilter("ignore", UserWarning)
+
+
 import torch
 from torch import nn
 
