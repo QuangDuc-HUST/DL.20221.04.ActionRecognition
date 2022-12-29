@@ -8,20 +8,18 @@ import albumentations as A
 from sklearn import model_selection
 
 import torch
-from torch.utils.data import Dataset, DataLoader, ConcatDataset
+from torch.utils.data import Dataset, DataLoader
 
 
 class ActionRecognitionDataset(Dataset):
     """
     Dataset class for training and validation stage
     """
-    def __init__(self, data_dir, df_train_test_split, is_first_dataset, dataset_name, transform):
+    def __init__(self, data_dir, df_train_test_split, transform):
 
         self.data_dir = data_dir
         self.transform = transform
         self.df = df_train_test_split
-        self.is_first_dataset = is_first_dataset
-        self.dataset_name = dataset_name
     
     def __len__(self):
         return len(self.df)
@@ -67,7 +65,7 @@ class ActionRecognitionDataset(Dataset):
         
         label = torch.tensor(label).long()
         
-        return imgs, label, self.is_first_dataset
+        return imgs, label
 
 class ActionRecognitionDatasetTest(ActionRecognitionDataset):
     """
@@ -75,7 +73,7 @@ class ActionRecognitionDatasetTest(ActionRecognitionDataset):
     """
 
     def __init__(self, data_dir, df_train_test_split, transform, clip_per_video):
-        super().__init__(data_dir, df_train_test_split, transform)
+        super().__init__(data_dir, df_train_test_split, transform, True, "test")
         self.clip_per_video = clip_per_video
 
     def __getitem__(self, idx):
@@ -158,9 +156,6 @@ class ActionRecognitionDataWrapper():
                                               self.transforms['train_transforms'])
 
 
-        self.train = ConcatDataset([self.train_1, self.train_2])
-        
-
         self.val_1 = ActionRecognitionDataset(self.data_dir_1, 
                                              df_val_1,
                                              self.transforms['val_transforms'])
@@ -219,8 +214,11 @@ class ActionRecognitionDataWrapper():
 
         return train_val_df_1, test_df_1, train_val_df_2, test_df_2
     
-    def get_train_dataloader(self):
-        return DataLoader(self.train, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True)
+    def get_train_1_dataloader(self):
+        return DataLoader(self.train_1, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True)
+
+    def get_train_2_dataloader(self):
+        return DataLoader(self.train_2, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True)
 
     def get_val_1_dataloader(self):
         return DataLoader(self.val_1, batch_size=self.batch_size, num_workers=self.num_workers)

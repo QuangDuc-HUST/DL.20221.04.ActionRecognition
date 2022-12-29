@@ -5,6 +5,7 @@
 import os
 import argparse
 from tqdm import tqdm
+import random
 
 import torch
 from torch import nn
@@ -17,7 +18,7 @@ from model.late_fusion_2_dataset import LateFusion
 
 from model.data_loader_2_dataset import ActionRecognitionDataWrapper 
 
-from evaluate import val_evaluate
+from evaluate_2_dataset import val_evaluate
 
 import utils
 from utils import seed_everything, get_training_device, acc_metrics, get_lr, get_transforms
@@ -100,20 +101,40 @@ def get_arg_parser():
 
     return parser.parse_args()
 
-def train(model, train_loader, criterion, optimizer, scheduler, wandb_logger, start_steps, args):
+
+def train(model, train_loader_1, train_loader_2, criterion, optimizer, scheduler, wandb_logger, start_steps, args):
     """
     One model training loop
     """
     model.train() 
     loss_avg = utils.RunningAverage()
+    len_train_loader_1 = len(train_loader_1)
+    len_train_loader_2 = len(train_loader_2)
+    propr = len_train_loader_1 / (len_train_loader_1 + len_train_loader_2)
 
-    with tqdm(total=len(train_loader)) as t:
-        for step , data in enumerate(train_loader):
+    iter_train_loader_1 = iter(train_loader_1)
+    iter_train_loader_2 = iter(train_loader_2)
 
-            it = start_steps + step          # current global step
+    with tqdm(total=len_train_loader_1 + len_train_loader_2) as t:
 
-            image, label, is_first_dataset = data
+        for step in range(len_train_loader_1 + len_train_loader_2):
+            it = start_steps + step
+            if (random.random() < propr):
+                try:
+                    is_first_dataset = True
+                    image, label = next(iter_train_loader_1)
+                except StopIteration:
+                    is_first_dataset = False
+                    image, label = next(iter_train_loader_2)
             
+            else:
+                try: 
+                    is_first_dataset = False
+                    image, label, is_first_dataset = next(iter_train_loader_2)
+                except StopIteration:
+                    is_first_dataset = True
+                    image, label, is_first_dataset = next(iter_train_loader_1)
+
             image = image.to(args.device, non_blocking=True)
             label = label.to(args.device, non_blocking=True)
             
@@ -147,7 +168,7 @@ def train(model, train_loader, criterion, optimizer, scheduler, wandb_logger, st
           "Train Loss: {:.3f}..".format(loss_avg()))
 
 
-def train_and_valid(epochs, model, train_loader, val_loader_1, val_loader_2, criterion,  optimizer, scheduler, ckp_dir, wandb_logger, args):
+def train_and_valid(epochs, model, train_loader_1, train_loader_2, val_loader_1, val_loader_2, criterion,  optimizer, scheduler, ckp_dir, wandb_logger, args):
     """
     Train and valid process including many epochs
     """
@@ -161,11 +182,11 @@ def train_and_valid(epochs, model, train_loader, val_loader_1, val_loader_2, cri
         
         print("Epoch {}/{}".format(epoch + 1, epochs))
         
-        train(model, train_loader, criterion, optimizer, scheduler, wandb_logger, epoch * len(train_loader), args)
+        train(model, train_loader_1, train_loader_2, criterion, optimizer, scheduler, wandb_logger, epoch * (len(train_loader_1) + len(train_loader_2)), args)
 
-        val_loss_1, val_acc_1 = val_evaluate(model, val_loader_1, criterion, acc_metrics, args)
+        val_loss_1, val_acc_1 = val_evaluate(model, val_loader_1, criterion, acc_metrics, True, args)
 
-        val_loss_2, val_acc_2=  val_evaluate(model, val_loader_2, criterion, acc_metrics, args)
+        val_loss_2, val_acc_2=  val_evaluate(model, val_loader_2, criterion, acc_metrics, False, args)
 
         if wandb_logger:
             wandb_logger._wandb.log({
@@ -180,7 +201,7 @@ def train_and_valid(epochs, model, train_loader, val_loader_1, val_loader_2, cri
         # Logging
         is_best = val_acc_1 >= best_val_acc_1
         if is_best:
-            print("- Found new best accuracy performance")
+            print("- Found new best accuracy performance on val 1")
 
         # Checkpoint saving
         utils.save_checkpoint({ 'epoch': epoch + 1,
@@ -276,7 +297,8 @@ if __name__ == '__main__':
     train_and_valid(epochs=args.max_epochs, 
                     model=net, 
                     train_loader=data_wrapper.get_train_dataloader(), 
-                    val_loader=data_wrapper.get_val_dataloader(), 
+                    val_loader_1=data_wrapper.get_val_1_dataloader(),
+                    val_loader_2=data_wrapper.get_val_2_dataloader(), 
                     criterion=criterion, 
                     optimizer=optimizer, 
                     scheduler=scheduler, 
