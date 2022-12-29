@@ -11,6 +11,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+import warnings
+warnings.simplefilter("ignore", UserWarning)
+
+import numpy as np
+
 import torch
 from torch import nn
 
@@ -175,8 +180,10 @@ def test_evaluate(model, test_data_loader, metrics, cfmatrix_save_folder, args):
 
     if cfmatrix_save_folder is not None:
         cf_matrix = confusion_matrix(y_true, y_preds)
-        plt.figure(figsize=(12, 7))
-        sns.heatmap(cf_matrix, annot=True)
+        plt.figure(figsize=(24, 15))
+        df_cm = pd.DataFrame(cf_matrix, index = [i for i in range(args.NUM_CLASSES)],
+                     columns = [i for i in range(args.NUM_CLASSES)])
+        sns.heatmap(df_cm, annot=False)     # display layers: 
         save_path = os.path.join(cfmatrix_save_folder, 'confusion_matrix.png')
         plt.savefig(save_path)
         print(f"Save confusion matrix to {save_path}")
@@ -208,8 +215,11 @@ if __name__ == '__main__':
     # Get NUM_CLASSES
     if args.dataset == 'hmdb51':
         NUM_CLASSES = 51
+        args.NUM_CLASSES = 51
     else:
         NUM_CLASSES = 101
+        args.NUM_CLASSES = 101
+
 
     # Get model 
     if args.model_name == "lrcn":
