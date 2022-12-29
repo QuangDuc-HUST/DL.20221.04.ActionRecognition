@@ -73,7 +73,7 @@ class ActionRecognitionDatasetTest(ActionRecognitionDataset):
     """
 
     def __init__(self, data_dir, df_train_test_split, transform, clip_per_video):
-        super().__init__(data_dir, df_train_test_split, transform, True, "test")
+        super().__init__(data_dir, df_train_test_split, transform)
         self.clip_per_video = clip_per_video
 
     def __getitem__(self, idx):
