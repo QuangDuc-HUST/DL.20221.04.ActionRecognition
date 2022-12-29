@@ -6,6 +6,11 @@ import argparse
 
 from tqdm import tqdm
 
+from sklearn.metrics import confusion_matrix
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 import torch
 from torch import nn
 
@@ -117,13 +122,18 @@ def val_evaluate(model, data_loader, criterion, metrics, args):
 
     return loss_mean, acc_mean
 
-def test_evaluate(model, test_data_loader, metrics, args):
+def test_evaluate(model, test_data_loader, metrics, cfmatrix_save_folder, args):
     """
     Test for one epoch
     """
     model.eval()
 
     acc_summ = 0
+
+    # For confusion matrix
+    if cfmatrix_save_folder is not None:
+        y_preds = []
+        y_true = []
 
     with torch.no_grad():
         with tqdm(total=len(test_data_loader)) as t:
@@ -153,11 +163,23 @@ def test_evaluate(model, test_data_loader, metrics, args):
                 acc = metrics(output, label)
                 acc_summ += acc.item()
 
+                if cfmatrix_save_folder is not None:
+                    y_preds.extend(output.argmax(1).data.cpu().numpy())
+                    y_true.extend(label.data.cpu().numpy())
+
                 t.update()
 
     acc_mean = acc_summ / len(test_data_loader)
     
     print(f'Test acc: {acc_mean:05.3f}')
+
+    if cfmatrix_save_folder is not None:
+        cf_matrix = confusion_matrix(y_true, y_preds)
+        plt.figure(figsize=(12, 7))
+        sns.heatmap(cf_matrix, annot=True)
+        save_path = os.path.join(cfmatrix_save_folder, 'confusion_matrix.png')
+        plt.savefig(save_path)
+        print(f"Save confusion matrix to {save_path}")
 
     return acc_mean
 
@@ -217,7 +239,7 @@ if __name__ == '__main__':
     utils.load_checkpoint(os.path.join(args.ckp_dir, args.restore_file), net)
 
     # Evaluate
-    test_acc = test_evaluate(net, test_loader, utils.acc_metrics, args)
+    test_acc = test_evaluate(net, test_loader, utils.acc_metrics, args.ckp_dir, args)
     test_metrics = {'test_acc':test_acc}
 
     json_path = os.path.join(args.ckp_dir, 'metrics_test.json')
