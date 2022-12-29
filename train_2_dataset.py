@@ -7,6 +7,9 @@ import argparse
 from tqdm import tqdm
 import random
 
+import warnings
+warnings.simplefilter("ignore", UserWarning)
+
 import torch
 from torch import nn
 
@@ -121,21 +124,21 @@ def train(model, train_loader_1, train_loader_2, criterion, optimizer, scheduler
             it = start_steps + step
             if (random.random() < propr):
                 try:
-                    print("Dataset 1")
+                    # print("Dataset 1")
                     is_first_dataset = True
                     image, label = next(iter_train_loader_1)
                 except StopIteration:
-                    print("Stop iteration Dataset 1, Dataset 2")
+                    # print("Stop iteration Dataset 1, Dataset 2")
                     is_first_dataset = False
                     image, label = next(iter_train_loader_2)
             
             else:
                 try: 
-                    print("Dataset 2")
+                    # print("Dataset 2")
                     is_first_dataset = False
                     image, label = next(iter_train_loader_2)
                 except StopIteration:
-                    print("Stop iteration Dataset 2, Dataset 1")
+                    # print("Stop iteration Dataset 2, Dataset 1")
                     is_first_dataset = True
                     image, label = next(iter_train_loader_1)
 
