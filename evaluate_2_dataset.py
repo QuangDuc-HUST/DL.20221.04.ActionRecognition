@@ -216,15 +216,19 @@ if __name__ == '__main__':
     NUM_CLASSES = 0
     if args.dataset_1 == 'hmdb51':
         NUM_CLASSES_1 = 51
+
     else:
         NUM_CLASSES_1 = 101
     
+    args.NUM_CLASSES_1 = NUM_CLASSES_1
+
+
     if args.dataset_2 == 'hmdb51':
         NUM_CLASSES_2 = 51
     else:
         NUM_CLASSES_2 = 101
 
-
+    args.NUM_CLASSES_2 = NUM_CLASSES_2
     # Get model 
     if args.model_name == "lrcn":
         net = LRCN(**dict_args,
@@ -272,8 +276,8 @@ if __name__ == '__main__':
 
     cf_matrix_1 = confusion_matrix(y_true_1, y_preds_1)
     plt.figure(figsize=(24, 15))
-    df_cm = pd.DataFrame(cf_matrix_1, index = [i for i in range(args.NUM_CLASSES)],
-                    columns = [i for i in range(args.NUM_CLASSES)])
+    df_cm = pd.DataFrame(cf_matrix_1, index = [i for i in range(args.NUM_CLASSES_1)],
+                    columns = [i for i in range(args.NUM_CLASSES_1)])
     sns.heatmap(df_cm, annot=False)     # display layers: 
     save_path_1 = os.path.join(args.ckp_dir, 'confusion_matrix_1.png')
     plt.savefig(save_path_1)
@@ -281,8 +285,8 @@ if __name__ == '__main__':
 
     cf_matrix_2 = confusion_matrix(y_true_2, y_preds_2)
     plt.figure(figsize=(24, 15))
-    df_cm = pd.DataFrame(cf_matrix_2, index = [i for i in range(args.NUM_CLASSES)],
-                    columns = [i for i in range(args.NUM_CLASSES)])
+    df_cm = pd.DataFrame(cf_matrix_2, index = [i for i in range(args.NUM_CLASSES_2)],
+                    columns = [i for i in range(args.NUM_CLASSES_2)])
     sns.heatmap(df_cm, annot=False)     # display layers: 
     save_path_2 = os.path.join(args.ckp_dir, 'confusion_matrix_2.png')
     plt.savefig(save_path_2)
