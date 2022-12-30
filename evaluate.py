@@ -178,8 +178,9 @@ def test_evaluate(model, test_data_loader, metrics, cfmatrix_save_folder, args):
     print(f'Test acc: {acc_mean:05.3f}')
 
     if cfmatrix_save_folder is not None:
+        size_confusion = {'ucf101': (34, 24), 'hmdb51': (24, 17)}
         cf_matrix = confusion_matrix(y_true, y_preds)
-        plt.figure(figsize=(34, 24))
+        plt.figure(figsize=size_confusion[args.dataset])
         df_cm = pd.DataFrame(cf_matrix, index = list(get_map_id_to_label(args.dataset)[0].values()),
                      columns = list(get_map_id_to_label(args.dataset)[0].values()))
         sns.heatmap(df_cm, annot=False)     # display layers: 
