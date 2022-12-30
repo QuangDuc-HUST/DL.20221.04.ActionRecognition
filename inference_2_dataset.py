@@ -24,8 +24,13 @@ def get_arg_parser():
 
     parser.add_argument('--video_path', type=str, required=True)
     parser.add_argument('--weight_path',type=str, default='./ckp/baseline/best.pth')
-    parser.add_argument('--dataset', type=str, required=True, 
+    parser.add_argument('--dataset_1', type=str, default='ucf101', 
                         choices=['hmdb51', 'ucf101'])
+
+    parser.add_argument('--dataset_2', type=str, default='hmdb51', 
+                        choices=['hmdb51', 'ucf101'])
+
+    parser.add_argument('--first_dataset', action='store_true')
 
     # Module specific args
     parser.add_argument('--model_name', type=str, required=True, 
@@ -116,13 +121,20 @@ def extract_features_from_video(video_path, type, transform, *args, **kwargs):
     video_reader.release()
     return torch.stack(frames, dim=0)
 
-def load_model(dataset, model_name, **kwargs):
+def load_model(dataset_1, dataset_2, model_name, **kwargs):
     # Get NUM_CLASSES
-    if dataset == 'hmdb51':
-        NUM_CLASSES = 51
-    else:
-        NUM_CLASSES = 101
+    # Get NUM_CLASSES
+    NUM_CLASSES = 0
+    if dataset_1 == 'hmdb51':
+        NUM_CLASSES_1 = 51
 
+    else:
+        NUM_CLASSES_1 = 101
+
+    if dataset_2 == 'hmdb51':
+        NUM_CLASSES_2 = 51
+    else:
+        NUM_CLASSES_2 = 101
 
     if model_name == "lrcn":
         net = LRCN(**kwargs,
@@ -140,21 +152,22 @@ def load_model(dataset, model_name, **kwargs):
         
     elif model_name == "late_fusion":
         net = LateFusion(**kwargs, 
-                         n_class=NUM_CLASSES)
+                         n_class_1=NUM_CLASSES_1,
+                         n_class_2=NUM_CLASSES_2)
 
     return net
 
-def predict_model(model, features, args):
+def predict_model(model, features, first_dataset, args):
 
     model.eval()
     with torch.no_grad():
         clip = features.to(args.device, non_blocking=True)
-        logit = model(clip.unsqueeze(0)).squeeze()
+        logit = model(clip.unsqueeze(0), first_dataset).squeeze()
         output = torch.softmax(logit, dim=0)
     
     return output.detach().cpu().numpy()
 
-def predict(video_path, weight_path, dataset, model_name, sample_type, resize_to, **kwargs):
+def predict(video_path, weight_path, dataset_1, dataset_2, model_name, sample_type, resize_to, first_dataset, **kwargs):
 
     utils.seed_everything(seed=73)
 
@@ -169,7 +182,7 @@ def predict(video_path, weight_path, dataset, model_name, sample_type, resize_to
     args = Args(sample_type, resize_to)
 
 
-    net = load_model(dataset, model_name, **kwargs)
+    net = load_model(dataset_1, dataset_2, model_name, **kwargs)
 
     net.to(device)
 
@@ -179,7 +192,7 @@ def predict(video_path, weight_path, dataset, model_name, sample_type, resize_to
     
     features = extract_features_from_video(video_path, args.sample_type, transform)
 
-    output = predict_model(net, features, args)
+    output = predict_model(net, features, first_dataset, args)
 
     return output
 

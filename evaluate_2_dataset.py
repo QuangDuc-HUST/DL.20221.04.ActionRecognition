@@ -27,7 +27,7 @@ from model.late_fusion_2_dataset import LateFusion
 from model.data_loader_2_dataset import ActionRecognitionDataWrapper 
 
 import utils
-from utils import WandbLogger
+from utils import WandbLogger, get_map_id_to_label
 
 def get_arg_parser():
     """
@@ -133,7 +133,7 @@ def val_evaluate(model, data_loader, criterion, metrics, is_first_dataset, args)
 
     return loss_mean, acc_mean
 
-def test_evaluate(model, test_data_loader, metrics, cfmatrix_save_folder, args):
+def test_evaluate(model, test_data_loader, metrics, is_first_dataset, cfmatrix_save_folder, args):
     """
     Test for one epoch
     """
@@ -159,7 +159,7 @@ def test_evaluate(model, test_data_loader, metrics, cfmatrix_save_folder, args):
                     label = label.to(args.device, non_blocking=True)
 
                     #forward
-                    output = torch.softmax(model(clip), dim=1)
+                    output = torch.softmax(model(clip, is_first_dataset), dim=1)
                 
                 else:
                     outputs = []
@@ -169,7 +169,7 @@ def test_evaluate(model, test_data_loader, metrics, cfmatrix_save_folder, args):
 
                         clip = clips[:,i,:,:,:].to(args.device, non_blocking=True)
                         #forward
-                        outputs.append(torch.softmax(model(clip), dim=1))
+                        outputs.append(torch.softmax(model(clip, is_first_dataset), dim=1))
                     
                     outputs = torch.stack(outputs, dim=1)
                     output = torch.mean(outputs, dim=1)
@@ -257,7 +257,7 @@ if __name__ == '__main__':
 
     # Evaluate
     print("Evaluate on test set the first dataset ...")
-    test_acc, y_true_1, y_preds_1 = test_evaluate(net, test_loader_1, utils.acc_metrics, args.ckp_dir, args)
+    test_acc, y_true_1, y_preds_1 = test_evaluate(net, test_loader_1, utils.acc_metrics,True, args.ckp_dir, args)
     test_metrics = {'test_acc_1':test_acc}
 
     json_path = os.path.join(args.ckp_dir, 'metrics_test_1.json')
@@ -266,7 +266,7 @@ if __name__ == '__main__':
 
 
     print("Evaluate on test set the second dataset ...")
-    test_acc, y_true_2, y_preds_2  = test_evaluate(net, test_loader_2, utils.acc_metrics, args.ckp_dir, args)
+    test_acc, y_true_2, y_preds_2  = test_evaluate(net, test_loader_2, utils.acc_metrics, False, args.ckp_dir, args)
     test_metrics['test_acc_2'] = test_acc
 
     json_path = os.path.join(args.ckp_dir, 'metrics_test_2.json')
@@ -275,24 +275,24 @@ if __name__ == '__main__':
     
 
     cf_matrix_1 = confusion_matrix(y_true_1, y_preds_1)
-    plt.figure(figsize=(24, 15))
-    df_cm = pd.DataFrame(cf_matrix_1, index = [i for i in range(args.NUM_CLASSES_1)],
-                    columns = [i for i in range(args.NUM_CLASSES_1)])
+    plt.figure(figsize=(24, 30))
+    df_cm = pd.DataFrame(cf_matrix_1, index = list(get_map_id_to_label(args.dataset_1)[0].values()),
+                    columns = list(get_map_id_to_label(args.dataset_1)[0].values()))
     sns.heatmap(df_cm, annot=False)     # display layers: 
     save_path_1 = os.path.join(args.ckp_dir, 'confusion_matrix_1.png')
     plt.savefig(save_path_1)
     print(f"Save confusion matrix to {save_path_1}")
 
     cf_matrix_2 = confusion_matrix(y_true_2, y_preds_2)
-    plt.figure(figsize=(24, 15))
-    df_cm = pd.DataFrame(cf_matrix_2, index = [i for i in range(args.NUM_CLASSES_2)],
-                    columns = [i for i in range(args.NUM_CLASSES_2)])
+    plt.figure(figsize=(24, 30))
+    df_cm = pd.DataFrame(cf_matrix_2, index = list(get_map_id_to_label(args.dataset_2)[0].values()),
+                    columns = list(get_map_id_to_label(args.dataset_2)[0].values()))
     sns.heatmap(df_cm, annot=False)     # display layers: 
     save_path_2 = os.path.join(args.ckp_dir, 'confusion_matrix_2.png')
     plt.savefig(save_path_2)
     print(f"Save confusion matrix to {save_path_2}")
 
     if args.enable_wandb:
-        WandbLogger.save_file_artifact(args.project, save_path_1, save_path_2, "confusion_matrix")
+        WandbLogger.save_file_artifact(args.project, save_path_1, save_path_2, "confusion_matrix", args)
         print("Log to results to wandb summary ...")
         WandbLogger.save_metrics(test_metrics, args)
