@@ -1,14 +1,18 @@
 import argparse
 import random
 
+import warnings
+warnings.simplefilter("ignore", UserWarning)
+
+
 import torch
 import cv2
 
 from model.lrcn import LRCN
-from model.c3d import C3D
+from model.c3d_2_dataset import C3D
 from model.i3d import I3D
 from model.non_local_i3res import NonLocalI3Res
-from model.late_fusion import LateFusion
+from model.late_fusion_2_dataset import LateFusion
 
 import utils
 

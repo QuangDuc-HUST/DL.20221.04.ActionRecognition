@@ -6,16 +6,20 @@ import argparse
 
 from tqdm import tqdm
 
+import warnings
+warnings.simplefilter("ignore", UserWarning)
+
+
 import torch
 from torch import nn
 
 from model.lrcn import LRCN
-from model.c3d import C3D
+from model.c3d_2_dataset import C3D
 from model.i3d import I3D
 from model.non_local_i3res import NonLocalI3Res
-from model.late_fusion import LateFusion
+from model.late_fusion_2_dataset import LateFusion
 
-from model.data_loader import ActionRecognitionDataWrapper 
+from model.data_loader_2_dataset import ActionRecognitionDataWrapper 
 
 import utils
 from utils import WandbLogger

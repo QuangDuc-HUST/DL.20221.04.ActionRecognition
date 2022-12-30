@@ -14,7 +14,7 @@ import torch
 from torch import nn
 
 from model.lrcn import LRCN
-from model.c3d import C3D
+from model.c3d_2_dataset import C3D
 from model.i3d import I3D
 from model.non_local_i3res import NonLocalI3Res
 from model.late_fusion_2_dataset import LateFusion
@@ -191,8 +191,11 @@ def train_and_valid(epochs, model, train_loader_1, train_loader_2, val_loader_1,
         
         train(model, train_loader_1, train_loader_2, criterion, optimizer, scheduler, wandb_logger, epoch * (len(train_loader_1) + len(train_loader_2)), args)
 
+        print(f"Evaluation on epoch {epoch + 1}...")
+        print(f"Evaluation on validation dataset 1...")
         val_loss_1, val_acc_1 = val_evaluate(model, val_loader_1, criterion, acc_metrics, True, args)
 
+        print(f"Evaluation on validation dataset 2...")
         val_loss_2, val_acc_2=  val_evaluate(model, val_loader_2, criterion, acc_metrics, False, args)
 
         if wandb_logger:
