@@ -24,7 +24,7 @@ def get_transforms(args):
 
     train_transforms = A.ReplayCompose(
         [   
-            A.RandomResizedCrop(args.resize_to, args.resize_to, interpolation=cv2.INTER_CUBIC),
+            A.Resize(args.resize_to, args.resize_to, interpolation=cv2.INTER_CUBIC),
             A.HorizontalFlip(p=0.5),
             A.VerticalFlip(p=0.2),
             A.ColorJitter(),

@@ -8,10 +8,8 @@ warnings.simplefilter("ignore", UserWarning)
 import torch
 import cv2
 
-from model.lrcn import LRCN
 from model.c3d_2_dataset import C3D
-from model.i3d import I3D
-from model.non_local_i3res import NonLocalI3Res
+from model.non_local_i3res_2_dataset import NonLocalI3Res
 from model.late_fusion_2_dataset import LateFusion
 
 import utils
@@ -34,28 +32,17 @@ def get_arg_parser():
 
     # Module specific args
     parser.add_argument('--model_name', type=str, required=True, 
-                        choices=["lrcn", "c3d", "i3d", "non_local", "late_fusion"])
+                        choices=[ "c3d", "non_local", "late_fusion"])
 
     ## Get the model name now 
     temp_args, _ = parser.parse_known_args()
 
-    if temp_args.model_name == "lrcn":
-        parser = LRCN.add_model_specific_args(parser)
 
-        parser.add_argument('--sample_type', type=str, default='5_frames_uniform' )
-        parser.add_argument('--resize_to', type=int, default=256) 
-
-    elif temp_args.model_name == "c3d":
+    if temp_args.model_name == "c3d":
         parser = C3D.add_model_specific_args(parser)
         # Data transform
         parser.add_argument('--sample_type', type=str, default= '16_frames_conse_rand' )
         parser.add_argument('--resize_to', type=int, default=112)   
-    
-    elif temp_args.model_name == "i3d":
-        parser = I3D.add_model_specific_args(parser)
-         # Data transform
-        parser.add_argument('--sample_type', type=str, default='16_frames_conse_rand' )
-        parser.add_argument('--resize_to', type=int, default=224)   
 
     elif temp_args.model_name == "non_local":
         parser = NonLocalI3Res.add_model_specific_args(parser)
@@ -136,19 +123,13 @@ def load_model(dataset_1, dataset_2, model_name, **kwargs):
     else:
         NUM_CLASSES_2 = 101
 
-    if model_name == "lrcn":
-        net = LRCN(**kwargs,
-                    n_class=NUM_CLASSES)
-    elif model_name == "c3d":
+    if model_name == "c3d":
         net = C3D(**kwargs,
-                    n_class=NUM_CLASSES)
-    elif model_name == "i3d":
-        net = I3D(**kwargs,
-                    num_classes=NUM_CLASSES)
+                    n_class_1=NUM_CLASSES_1, n_class_2=NUM_CLASSES_2)
 
     elif model_name == "non_local":
         net = NonLocalI3Res(**kwargs,
-                            num_classes=NUM_CLASSES)
+                            num_classes_1=NUM_CLASSES_1, num_classes_2=NUM_CLASSES_2)
         
     elif model_name == "late_fusion":
         net = LateFusion(**kwargs, 

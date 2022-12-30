@@ -111,6 +111,10 @@ class I3Res50(nn.Module):
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2, temp_conv=[0, 1, 0], temp_stride=[1, 1, 1])
         self.avgpool = nn.AdaptiveAvgPool3d((1, 1, 1))
         self.fc = nn.Linear(512 * block.expansion, num_classes)
+
+        self.output_layer_1 = None
+        self.output_layer_2 = None
+
         self.drop = nn.Dropout(0.5)
 
         for m in self.modules():
@@ -136,7 +140,7 @@ class I3Res50(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def forward(self, x):
+    def forward(self, x, is_class_first=True ):
 
         x =  x.transpose(1, 2)
 
@@ -155,5 +159,11 @@ class I3Res50(nn.Module):
         x = self.drop(x)
 
         x = x.view(x.shape[0], -1)
-        x = self.fc(x)
-        return x
+        # x = self.fc(x)
+        if is_class_first:
+            output = self.output_layer_1(x)
+        else:
+            output = self.output_layer_2(x)
+
+
+        return output

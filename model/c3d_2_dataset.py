@@ -18,7 +18,7 @@ class C3D(c3d_model_2_dataset.C3D):
         parser.add_argument("--weight_folder", type=str, default='./model/weights/')
         return parent_parser
 
-    def __init__(self, drop_out, n_class, pretrain, weight_folder, *args, **kwargs):
+    def __init__(self, drop_out, n_class_1, n_class_2, pretrain, weight_folder, *args, **kwargs):
         super(C3D, self).__init__(drop_out=drop_out)
         
         if pretrain:
@@ -31,4 +31,5 @@ class C3D(c3d_model_2_dataset.C3D):
 
             print("Load C3D pretrained weights successfully.")
 
-        self.fc8 = nn.Linear(4096, n_class)
+        self.output_layer_1 = nn.Linear(4096, n_class_1)
+        self.output_layer_2 = nn.Linear(4096, n_class_2)

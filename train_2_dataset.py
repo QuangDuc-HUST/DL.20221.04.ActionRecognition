@@ -13,10 +13,8 @@ warnings.simplefilter("ignore", UserWarning)
 import torch
 from torch import nn
 
-from model.lrcn import LRCN
 from model.c3d_2_dataset import C3D
-from model.i3d import I3D
-from model.non_local_i3res import NonLocalI3Res
+from model.non_local_i3res_2_dataset import NonLocalI3Res
 from model.late_fusion_2_dataset import LateFusion
 
 from model.data_loader_2_dataset import ActionRecognitionDataWrapper 
@@ -61,7 +59,7 @@ def get_arg_parser():
     # Module specific args
     ## which model to use
     parser.add_argument('--model_name', type=str, required=True, 
-                        choices=["lrcn", "c3d", "i3d", "non_local", "late_fusion"])
+                        choices=["c3d", "non_local", "late_fusion"])
 
     ## Get the model name now 
     temp_args, _ = parser.parse_known_args()
@@ -71,21 +69,10 @@ def get_arg_parser():
         parser = LateFusion.add_model_specific_args(parser)
         parser.add_argument('--resize_to', type=int, default=256)   # 5 uni
 
-    elif temp_args.model_name == "lrcn":
-        parser = LRCN.add_model_specific_args(parser)
-        # Data transform
-        parser.add_argument('--resize_to', type=int, default=256)   # 5 uni
-
     elif temp_args.model_name == "c3d":
         parser = C3D.add_model_specific_args(parser)
         # Data transform
         parser.add_argument('--resize_to', type=int, default=112)
-
-    elif temp_args.model_name == "i3d":
-        parser = I3D.add_model_specific_args(parser)
-
-         # Data transform
-        parser.add_argument('--resize_to', type=int, default=224)   
 
     elif temp_args.model_name == "non_local":
         parser = NonLocalI3Res.add_model_specific_args(parser)
@@ -276,18 +263,10 @@ if __name__ == '__main__':
     # Get model 
     if args.model_name == "late_fusion":
         net = LateFusion(**dict_args,n_class_1=NUM_CLASSES_1, n_class_2=NUM_CLASSES_2)
-    elif args.model_name == "lrcn":
-        net = LRCN(**dict_args,
-                    n_class=NUM_CLASSES)
     elif args.model_name == "c3d":
-        net = C3D(**dict_args,
-                    n_class=NUM_CLASSES)
-    elif args.model_name == "i3d":
-        net = I3D(**dict_args,
-                    num_classes=NUM_CLASSES)
+        net = C3D(**dict_args, n_class_1=NUM_CLASSES_1, n_class_2=NUM_CLASSES_2)
     elif args.model_name == "non_local":
-        net = NonLocalI3Res(**dict_args,
-                            num_classes=NUM_CLASSES)
+        net = NonLocalI3Res(**dict_args, num_classes_1=NUM_CLASSES_1, num_classes_2=NUM_CLASSES_2)
 
     net.to(args.device)
     # Loss functions

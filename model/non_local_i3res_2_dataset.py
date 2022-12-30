@@ -18,7 +18,7 @@ class NonLocalI3Res(non_local_i3res_model.I3Res50):
 
         return parent_parser
 
-    def __init__(self, num_classes, use_nl, weight_folder, 
+    def __init__(self, num_classes_1, num_classes_2, use_nl, weight_folder, 
                 block=non_local_i3res_model.Bottleneck, 
                 layers=[3, 4, 6, 3],
                 *args,
@@ -41,4 +41,7 @@ class NonLocalI3Res(non_local_i3res_model.I3Res50):
         print("Load pretrained weights successfully..")
 
         input_fc = self.fc.in_features
-        self.fc = nn.Linear(input_fc, num_classes)
+        # self.fc = nn.Linear(input_fc, num_classes)
+        
+        self.output_layer_1 = nn.Linear(input_fc, num_classes_1)
+        self.output_layer_2 = nn.Linear(input_fc, num_classes_2)

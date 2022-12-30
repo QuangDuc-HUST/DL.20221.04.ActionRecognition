@@ -39,9 +39,12 @@ class C3D(nn.Module):
 
         self.dropout = nn.Dropout(p=drop_out)
 
+        self.output_layer_1 = None
+        self.output_layer_2 = None
+        
         self.relu = nn.ReLU()
-
-    def forward(self, x):
+    
+    def forward(self, x, is_class_first=True):
 
       
         x = x.transpose(1, 2)
@@ -70,9 +73,13 @@ class C3D(nn.Module):
         h = self.relu(self.fc7(h))
         h = self.dropout(h)
 
-        logits = self.fc8(h)
+        if is_class_first:
+            output = self.output_layer_1(h)
+        else:
+            output = self.output_layer_2(h)
 
-        return logits
+        return output
+    
 
 """
 References
