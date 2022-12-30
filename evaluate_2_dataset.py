@@ -249,10 +249,10 @@ if __name__ == '__main__':
     json_path = os.path.join(args.ckp_dir, 'metrics_test_2.json')
     utils.save_dict_to_json(test_metrics, json_path)
 
-    
+    size_confusion = {'ucf101': (34, 24), 'hmdb51': (24, 17)}
 
     cf_matrix_1 = confusion_matrix(y_true_1, y_preds_1)
-    plt.figure(figsize=(34, 24))
+    plt.figure(figsize=size_confusion[args.dataset_1])
     df_cm = pd.DataFrame(cf_matrix_1, index = list(get_map_id_to_label(args.dataset_1)[0].values()),
                     columns = list(get_map_id_to_label(args.dataset_1)[0].values()))
     sns.heatmap(df_cm, annot=False)     # display layers: 
@@ -261,7 +261,7 @@ if __name__ == '__main__':
     print(f"Save confusion matrix to {save_path_1}")
 
     cf_matrix_2 = confusion_matrix(y_true_2, y_preds_2)
-    plt.figure(figsize=(34, 24))
+    plt.figure(figsize=size_confusion[args.dataset_2])
     df_cm = pd.DataFrame(cf_matrix_2, index = list(get_map_id_to_label(args.dataset_2)[0].values()),
                     columns = list(get_map_id_to_label(args.dataset_2)[0].values()))
     sns.heatmap(df_cm, annot=False)     # display layers: 
