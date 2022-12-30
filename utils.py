@@ -10,6 +10,8 @@ import random
 import shutil
 import subprocess
 
+import pandas as pd
+
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 import cv2
@@ -158,11 +160,15 @@ class WandbLogger():
         wandb_run.summary.update()
     
     @staticmethod
-    def save_file_artifact(project_name, file_path, artifact_type):
+    def save_file_artifact(project_name, file_path, artifact_type, args):
+
+        with open(os.path.join(args.ckp_dir, 'wandb_info.json')) as f:
+            wandb_info = json.load(f)
+
         import wandb
 
         with wandb.init(project=project_name) as run:
-            artifact_name = str(run.id)
+            artifact_name = str(wandb_info['id'])
             artifact = wandb.Artifact(artifact_name, artifact_type) #default artifact_name = run.id
             artifact.add_file(file_path)
             run.log_artifact(artifact)
@@ -176,7 +182,24 @@ class WandbLogger():
         print(f"Save {file_path} to {artifact_name} in project {project_name}")
         print(f"Delete the run {path} after creating the artifact.")
         print('-'*20)
+        
+def get_map_id_to_label(dataset_name):
+    if dataset_name == "hmdb51":
+        annotation_path = './data/HMDB51/annotation/video_class_to_label.csv'
+    elif dataset_name == "ucf101":
+        annotation_path = './data/UCF101/annotation/video_class_to_label.csv'
 
+    df = pd.read_csv(annotation_path)
+    df = df.sort_values(by="label_id")
+
+    id_to_label = {}
+    label_to_id = {}
+
+    for _ , row in df.iterrows():
+        id_to_label[row['label_id']] = row['video_class_id']
+        label_to_id[row['video_class_id']] = row['label_id']
+
+    return id_to_label, label_to_id
 
 def runcmd(cmd, is_wait=False, *args, **kwargs):
     # function for running command

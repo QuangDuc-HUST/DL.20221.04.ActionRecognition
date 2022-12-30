@@ -26,7 +26,7 @@ from model.late_fusion import LateFusion
 from model.data_loader import ActionRecognitionDataWrapper 
 
 import utils
-from utils import WandbLogger
+from utils import WandbLogger, get_map_id_to_label
 
 def get_arg_parser():
     """
@@ -179,16 +179,16 @@ def test_evaluate(model, test_data_loader, metrics, cfmatrix_save_folder, args):
 
     if cfmatrix_save_folder is not None:
         cf_matrix = confusion_matrix(y_true, y_preds)
-        plt.figure(figsize=(24, 15))
-        df_cm = pd.DataFrame(cf_matrix, index = [i for i in range(args.NUM_CLASSES)],
-                     columns = [i for i in range(args.NUM_CLASSES)])
+        plt.figure(figsize=(34, 24))
+        df_cm = pd.DataFrame(cf_matrix, index = list(get_map_id_to_label(args.dataset)[0].values()),
+                     columns = list(get_map_id_to_label(args.dataset)[0].values()))
         sns.heatmap(df_cm, annot=False)     # display layers: 
         save_path = os.path.join(cfmatrix_save_folder, 'confusion_matrix.png')
         plt.savefig(save_path)
         print(f"Save confusion matrix to {save_path}")
 
         if args.enable_wandb:
-            WandbLogger.save_file_artifact(args.project, save_path, "confusion_matrix")
+            WandbLogger.save_file_artifact(args.project, save_path, "confusion_matrix", args)
 
     return acc_mean
 
