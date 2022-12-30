@@ -195,7 +195,7 @@ def train_and_valid(epochs, model, train_loader, val_loader, criterion,  optimiz
         utils.save_dict_to_json({'val_acc':val_acc}, l_json_path) 
 
         # Upload checkpoint periodically
-        if wandb_logger and args.save_ckp_epochs and not epoch % args.save_ckp_epochs:
+        if wandb_logger and args.save_ckp_epochs and not epoch % args.save_ckp_epochs and (epoch != epochs - 1):
             wandb_logger.log_checkpoints()
 
 

@@ -86,6 +86,7 @@ def get_arg_parser():
 
     # Wandb specific args
     parser.add_argument('--enable_wandb', action='store_true')
+    parser.add_argument('--project', type=str, default="dl_action_recognition")
 
     return parser.parse_args()
 
@@ -186,6 +187,9 @@ def test_evaluate(model, test_data_loader, metrics, cfmatrix_save_folder, args):
         plt.savefig(save_path)
         print(f"Save confusion matrix to {save_path}")
 
+        if args.enable_wandb:
+            WandbLogger.save_file_artifact(args.project, save_path, "confusion_matrix")
+
     return acc_mean
 
 
@@ -212,31 +216,29 @@ if __name__ == '__main__':
 
     # Get NUM_CLASSES
     if args.dataset == 'hmdb51':
-        NUM_CLASSES = 51
         args.NUM_CLASSES = 51
     else:
-        NUM_CLASSES = 101
         args.NUM_CLASSES = 101
 
 
     # Get model 
     if args.model_name == "lrcn":
         net = LRCN(**dict_args,
-                    n_class=NUM_CLASSES)
+                    n_class=args.NUM_CLASSES)
     elif args.model_name == "c3d":
         net = C3D(**dict_args,
-                    n_class=NUM_CLASSES)
+                    n_class=args.NUM_CLASSES)
     elif args.model_name == "i3d":
         net = I3D(**dict_args,
-                    num_classes=NUM_CLASSES)
+                    num_classes=args.NUM_CLASSES)
 
     elif args.model_name == "non_local":
         net = NonLocalI3Res(**dict_args,
-                            num_classes=NUM_CLASSES)
+                            num_classes=args.NUM_CLASSES)
         
     elif args.model_name == "late_fusion":
         net = LateFusion(**dict_args, 
-                        n_class=NUM_CLASSES)
+                        n_class=args.NUM_CLASSES)
       
     net.to(args.device)
 

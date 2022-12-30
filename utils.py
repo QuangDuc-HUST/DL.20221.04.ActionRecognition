@@ -22,7 +22,8 @@ def get_transforms(args):
 
     train_transforms = A.ReplayCompose(
         [   
-            A.Resize(args.resize_to, args.resize_to, interpolation=cv2.INTER_CUBIC),
+            A.RandomResizedCrop(args.resize_to, args.resize_to, interpolation=cv2.INTER_CUBIC),
+            # A.Resize(args.resize_to, args.resize_to, interpolation=cv2.INTER_CUBIC),
             A.HorizontalFlip(p=0.2),
             A.VerticalFlip(p=0.2),
             A.ColorJitter(p=0.2),
@@ -30,6 +31,7 @@ def get_transforms(args):
             ToTensorV2(),
         ]
         )
+
     val_transforms = A.ReplayCompose(
         [   
             A.Resize(args.resize_to, args.resize_to, interpolation=cv2.INTER_CUBIC),
@@ -38,6 +40,7 @@ def get_transforms(args):
             ToTensorV2(),
         ]
         )
+
     test_transforms = A.ReplayCompose(
         [   
             # A.CenterCrop(args.resize_to, args.resize_to),
@@ -153,6 +156,27 @@ class WandbLogger():
             wandb_run.summary[f'test/{metric}'] = value
         
         wandb_run.summary.update()
+    
+    @staticmethod
+    def save_file_artifact(project_name, file_path, artifact_type):
+        import wandb
+
+        with wandb.init(project=project_name) as run:
+            artifact_name = str(run.id)
+            artifact = wandb.Artifact(artifact_name, artifact_type) #default artifact_name = run.id
+            artifact.add_file(file_path)
+            run.log_artifact(artifact)
+            run.finish()
+            path = run.path
+
+        api = wandb.Api()
+        run = api.run(path)
+        run.delete()
+
+        print(f"Save {file_path} to {artifact_name} in project {project_name}")
+        print(f"Delete the run {path} after creating the artifact.")
+        print('-'*20)
+
 
 def runcmd(cmd, is_wait=False, *args, **kwargs):
     # function for running command
