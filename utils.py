@@ -154,6 +154,27 @@ class WandbLogger():
         
         wandb_run.summary.update()
 
+    @staticmethod
+    def save_file_artifact(project_name, file_path_1, file_path_2, artifact_type):
+        import wandb
+
+        with wandb.init(project=project_name) as run:
+            artifact_name = str(run.id)
+            artifact = wandb.Artifact(artifact_name, artifact_type) #default artifact_name = run.id
+            artifact.add_file(file_path_1)
+            artifact.add_file(file_path_2)
+            run.log_artifact(artifact)
+            run.finish()
+            path = run.path
+
+        api = wandb.Api()
+        run = api.run(path)
+        run.delete()
+
+        print(f"Save {file_path_1}, {file_path_2} to {artifact_name} in project {project_name}")
+        print(f"Delete the run {path} after creating the artifact.")
+        print('-'*20)
+
 def runcmd(cmd, is_wait=False, *args, **kwargs):
     # function for running command
     process = subprocess.Popen(

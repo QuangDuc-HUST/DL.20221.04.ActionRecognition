@@ -4,12 +4,12 @@ import os
 import torch
 from torch import nn
 
-from .utils import c3d_model
+from .utils import c3d_model_2_dataset
 from .utils.utils import download_weights
 
 
 
-class C3D(c3d_model.C3D):
+class C3D(c3d_model_2_dataset.C3D):
     @staticmethod
     def add_model_specific_args(parent_parser):
         parser = parent_parser.add_argument_group("C3D")

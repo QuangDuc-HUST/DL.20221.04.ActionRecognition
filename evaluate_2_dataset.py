@@ -6,6 +6,11 @@ import argparse
 
 from tqdm import tqdm
 
+from sklearn.metrics import confusion_matrix
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 import warnings
 warnings.simplefilter("ignore", UserWarning)
 
@@ -31,14 +36,20 @@ def get_arg_parser():
     parser = argparse.ArgumentParser()
 
     # PROGRAM level args
-    parser.add_argument('--data_dir', type=str, required=True)
+    parser.add_argument('--data_dir_1', type=str, required=True)
+    parser.add_argument('--data_dir_2', type=str, required=True)
+
     parser.add_argument('--ckp_dir', type=str, default='./ckp/baseline')
     parser.add_argument('--restore_file',type=str, default='best.pth')
 
 
     # DataModule specific args
-    parser.add_argument('--dataset', type=str, required=True, 
+    parser.add_argument('--dataset_1', type=str, required=True, 
                         choices=['hmdb51', 'ucf101'])
+
+    parser.add_argument('--dataset_2', type=str, required=True, 
+                        choices=['hmdb51', 'ucf101'])
+
     parser.add_argument('--data_split', type=str, default='split1', 
                         choices=['split1', 'split2', 'split3'])
     parser.add_argument('--batch_size', type=int, default=32)
@@ -82,6 +93,7 @@ def get_arg_parser():
 
     # Wandb specific args
     parser.add_argument('--enable_wandb', action='store_true')
+    parser.add_argument('--project', type=str, default="dl_action_recognition")
 
     return parser.parse_args()
 
@@ -121,13 +133,21 @@ def val_evaluate(model, data_loader, criterion, metrics, is_first_dataset, args)
 
     return loss_mean, acc_mean
 
-def test_evaluate(model, test_data_loader, metrics, args):
+def test_evaluate(model, test_data_loader, metrics, cfmatrix_save_folder, args):
     """
     Test for one epoch
     """
     model.eval()
 
     acc_summ = 0
+
+    # For confusion matrix
+    y_preds = None
+    y_true = None
+    
+    if cfmatrix_save_folder is not None:
+        y_preds = []
+        y_true = []
 
     with torch.no_grad():
         with tqdm(total=len(test_data_loader)) as t:
@@ -157,13 +177,17 @@ def test_evaluate(model, test_data_loader, metrics, args):
                 acc = metrics(output, label)
                 acc_summ += acc.item()
 
+                if cfmatrix_save_folder is not None:
+                    y_preds.extend(output.argmax(1).data.cpu().numpy())
+                    y_true.extend(label.data.cpu().numpy())
+
                 t.update()
 
     acc_mean = acc_summ / len(test_data_loader)
     
     print(f'Test acc: {acc_mean:05.3f}')
 
-    return acc_mean
+    return acc_mean, y_true, y_preds
 
 
 if __name__ == '__main__':
@@ -185,13 +209,21 @@ if __name__ == '__main__':
                                                 transforms=utils.get_transforms(args))
     
     # Get test loader
-    test_loader = data_wrapper.get_test_dataloader()
+    test_loader_1 = data_wrapper.get_test_1_dataloader()
+    test_loader_2 = data_wrapper.get_test_2_dataloader()
 
     # Get NUM_CLASSES
-    if args.dataset == 'hmdb51':
-        NUM_CLASSES = 51
+    NUM_CLASSES = 0
+    if args.dataset_1 == 'hmdb51':
+        NUM_CLASSES_1 = 51
     else:
-        NUM_CLASSES = 101
+        NUM_CLASSES_1 = 101
+    
+    if args.dataset_2 == 'hmdb51':
+        NUM_CLASSES_2 = 51
+    else:
+        NUM_CLASSES_2 = 101
+
 
     # Get model 
     if args.model_name == "lrcn":
@@ -209,8 +241,7 @@ if __name__ == '__main__':
                             num_classes=NUM_CLASSES)
         
     elif args.model_name == "late_fusion":
-        net = LateFusion(**dict_args, 
-                        n_class=NUM_CLASSES)
+        net = LateFusion(**dict_args,n_class_1=NUM_CLASSES_1, n_class_2=NUM_CLASSES_2)
       
     net.to(args.device)
 
@@ -221,14 +252,43 @@ if __name__ == '__main__':
     utils.load_checkpoint(os.path.join(args.ckp_dir, args.restore_file), net)
 
     # Evaluate
-    test_acc = test_evaluate(net, test_loader, utils.acc_metrics, args)
-    test_metrics = {'test_acc':test_acc}
+    print("Evaluate on test set the first dataset ...")
+    test_acc, y_true_1, y_preds_1 = test_evaluate(net, test_loader_1, utils.acc_metrics, args.ckp_dir, args)
+    test_metrics = {'test_acc_1':test_acc}
 
-    json_path = os.path.join(args.ckp_dir, 'metrics_test.json')
+    json_path = os.path.join(args.ckp_dir, 'metrics_test_1.json')
     utils.save_dict_to_json(test_metrics, json_path)
     print(f"Save metrics to {json_path}")
 
 
+    print("Evaluate on test set the second dataset ...")
+    test_acc, y_true_2, y_preds_2  = test_evaluate(net, test_loader_2, utils.acc_metrics, args.ckp_dir, args)
+    test_metrics['test_acc_2'] = test_acc
+
+    json_path = os.path.join(args.ckp_dir, 'metrics_test_2.json')
+    utils.save_dict_to_json(test_metrics, json_path)
+
+    
+
+    cf_matrix_1 = confusion_matrix(y_true_1, y_preds_1)
+    plt.figure(figsize=(24, 15))
+    df_cm = pd.DataFrame(cf_matrix_1, index = [i for i in range(args.NUM_CLASSES)],
+                    columns = [i for i in range(args.NUM_CLASSES)])
+    sns.heatmap(df_cm, annot=False)     # display layers: 
+    save_path_1 = os.path.join(args.ckp_dir, 'confusion_matrix_1.png')
+    plt.savefig(save_path_1)
+    print(f"Save confusion matrix to {save_path_1}")
+
+    cf_matrix_2 = confusion_matrix(y_true_2, y_preds_2)
+    plt.figure(figsize=(24, 15))
+    df_cm = pd.DataFrame(cf_matrix_2, index = [i for i in range(args.NUM_CLASSES)],
+                    columns = [i for i in range(args.NUM_CLASSES)])
+    sns.heatmap(df_cm, annot=False)     # display layers: 
+    save_path_2 = os.path.join(args.ckp_dir, 'confusion_matrix_2.png')
+    plt.savefig(save_path_2)
+    print(f"Save confusion matrix to {save_path_2}")
+
     if args.enable_wandb:
+        WandbLogger.save_file_artifact(args.project, save_path_1, save_path_2, "confusion_matrix")
         print("Log to results to wandb summary ...")
         WandbLogger.save_metrics(test_metrics, args)
