@@ -14,8 +14,6 @@ import seaborn as sns
 import warnings
 warnings.simplefilter("ignore", UserWarning)
 
-import numpy as np
-
 import torch
 from torch import nn
 
