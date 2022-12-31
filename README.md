@@ -48,7 +48,7 @@ Please follow the instructions on the Colab Version notebook
 ---
 
 
-## Quick starts
+## Quick starts (on your local machine)
 *For more details, we also comment it in every files*
 
 
@@ -68,6 +68,14 @@ Please follow the instructions on the Colab Version notebook
 ```
     python evaluate.py --model_name late_fusion --batch_size 32 --data_dir './data/UCF101/5_frames_uniform/' --dataset 'ucf101' 
 ```
+* We evaluate the ucf101 on the trained previous model with batch size is 32.
+
+#### `Prediction` the model on a new video 
+```
+    python inference.py --model_name late_fusion --video_path /path/to/video --dataset ucf101 
+```
+* Predict a new video based on ucf101 dataset label and return a list of percentage of classes
+
 
 ## Advanced training use
 
@@ -78,8 +86,10 @@ We recommend read through `train.py` and `build_dataset` to get intuition of wha
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1c594erS-_glCHjxHIWpV1kh2A_cOf6ti?usp=sharing)
 
 
----
-## Post Visualisation 
+## Visualisation of what the model has learned
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1BG4_e7xbXrhvO9rffRuH2pUtj_sxppdf?usp=sharing)
 
----
-## Deployment
+## Deployment on Colab Machine
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1Cm7VICYWw32mVDEAEXYDsUQHrw3TlKfN?usp=sharing)
+
+

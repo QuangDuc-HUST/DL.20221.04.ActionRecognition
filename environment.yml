@@ -161,4 +161,5 @@ dependencies:
     - tqdm==4.64.1
     - wandb==0.13.6
     - kaggle
+    - pandas
     - seaborn
