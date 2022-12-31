@@ -10,11 +10,11 @@
 ## Project Structure 
 
 ```
-README.md               # Instruction for running the code
+README.md               
 ckp/                    # Default checkpoint folder
-data/
+data/                   # Default data folder
 model/
-script/
+script/                 # Script for downloading the extracted data
 build_dataset.py        
 evaluate.py
 inference.py
