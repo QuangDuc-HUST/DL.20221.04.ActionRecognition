@@ -30,7 +30,7 @@ Our project has two versions: *Linux Environment* and *Google Colab environment*
 However, we highly recommend to use Google Colab version because of its convenience (our dataset is from 20GB to 200GB after extracting frames from video)
 
 ## Requirements
-### Google Colab Version 
+### Google Colab Version (recommended)
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://drive.google.com/drive/folders/1_L19tnAa6udACh7cNzx7mI6-KUYZReG_?usp=sharing)
 
@@ -74,7 +74,12 @@ Please follow the instructions on the Colab Version notebook
 We recommend read through `train.py` and `build_dataset` to get intuition of what options we offer.
 
 ---
-## EDA & Post Visualisation
+## EDA  
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1c594erS-_glCHjxHIWpV1kh2A_cOf6ti?usp=sharing)
 
--- 
+
+---
+## Post Visualisation 
+
+---
 ## Deployment
