@@ -1,12 +1,8 @@
-import os 
-
-
-import torch
 from torch import nn
-
 from .utils import c3d_model_2_dataset
 from .utils.utils import download_weights
-
+import os
+import torch
 
 
 class C3D(c3d_model_2_dataset.C3D):
@@ -20,7 +16,7 @@ class C3D(c3d_model_2_dataset.C3D):
 
     def __init__(self, drop_out, n_class_1, n_class_2, pretrain, weight_folder, *args, **kwargs):
         super(C3D, self).__init__(drop_out=drop_out)
-        
+
         if pretrain:
             file_name = "c3d.pickle"
             weight_path = os.path.join(weight_folder, file_name)

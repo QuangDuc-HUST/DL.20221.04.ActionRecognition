@@ -1,6 +1,6 @@
 #
 #
-#   
+#
 #
 #
 
@@ -41,12 +41,11 @@ class C3D(nn.Module):
 
         self.output_layer_1 = None
         self.output_layer_2 = None
-        
+
         self.relu = nn.ReLU()
-    
+
     def forward(self, x, is_class_first=True):
 
-      
         x = x.transpose(1, 2)
 
         h = self.relu(self.conv1(x))
@@ -79,11 +78,11 @@ class C3D(nn.Module):
             output = self.output_layer_2(h)
 
         return output
-    
+
 
 """
 References
 ----------
-[1] Tran, Du, et al. "Learning spatiotemporal features with 3d convolutional networks." 
+[1] Tran, Du, et al. "Learning spatiotemporal features with 3d convolutional networks."
 Proceedings of the IEEE international conference on computer vision. 2015.
 """

@@ -5,27 +5,21 @@ import os
 import argparse
 
 from tqdm import tqdm
-
-from sklearn.metrics import confusion_matrix
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-import warnings
-warnings.simplefilter("ignore", UserWarning)
-
-
-import torch
 from torch import nn
-
 from model.c3d_2_dataset import C3D
 from model.non_local_i3res_2_dataset import NonLocalI3Res
 from model.late_fusion_2_dataset import LateFusion
-
-from model.data_loader_2_dataset import ActionRecognitionDataWrapper 
-
-import utils
+from model.data_loader_2_dataset import ActionRecognitionDataWrapper
+from sklearn.metrics import confusion_matrix
 from utils import WandbLogger, get_map_id_to_label
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import torch
+import utils
+import warnings
+warnings.simplefilter("ignore", UserWarning)
+
 
 def get_arg_parser():
     """
@@ -38,39 +32,37 @@ def get_arg_parser():
     parser.add_argument('--data_dir_2', type=str, required=True)
 
     parser.add_argument('--ckp_dir', type=str, default='./ckp/baseline')
-    parser.add_argument('--restore_file',type=str, default='best.pth')
-
+    parser.add_argument('--restore_file', type=str, default='best.pth')
 
     # DataModule specific args
-    parser.add_argument('--dataset_1', type=str, required=True, 
+    parser.add_argument('--dataset_1', type=str, required=True,
                         choices=['hmdb51', 'ucf101'])
 
-    parser.add_argument('--dataset_2', type=str, required=True, 
+    parser.add_argument('--dataset_2', type=str, required=True,
                         choices=['hmdb51', 'ucf101'])
 
-    parser.add_argument('--data_split', type=str, default='split1', 
+    parser.add_argument('--data_split', type=str, default='split1',
                         choices=['split1', 'split2', 'split3'])
     parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--num_workers', type=int, default=2)
     parser.add_argument('--clip_per_video', type=int, default=1)
 
-
     # Module specific args
-    ## which model to use
-    parser.add_argument('--model_name', type=str, required=True, 
+    # which model to use
+    parser.add_argument('--model_name', type=str, required=True,
                         choices=["c3d", "non_local", "late_fusion"])
 
-    ## Get the model name now 
+    # Get the model name now
     temp_args, _ = parser.parse_known_args()
 
     if temp_args.model_name == "c3d":
         parser = C3D.add_model_specific_args(parser)
-        parser.add_argument('--resize_to', type=int, default=112)   #16 frames clip
-    
+        parser.add_argument('--resize_to', type=int, default=112)   # 16 frames clip
+
     elif temp_args.model_name == "non_local":
         parser = NonLocalI3Res.add_model_specific_args(parser)
-        parser.add_argument('--resize_to', type=int, default=224) 
-    
+        parser.add_argument('--resize_to', type=int, default=224)
+
     elif temp_args.model_name == "late_fusion":
         parser = LateFusion.add_model_specific_args(parser)
         parser.add_argument('--resize_to', type=int, default=256)   # 5 uni
@@ -81,6 +73,7 @@ def get_arg_parser():
 
     return parser.parse_args()
 
+
 def val_evaluate(model, data_loader, criterion, metrics, is_first_dataset, args):
     """
     Validation 1 epoch
@@ -88,18 +81,18 @@ def val_evaluate(model, data_loader, criterion, metrics, is_first_dataset, args)
     model.eval()
 
     acc_summ = 0
-    loss_summ = 0 
+    loss_summ = 0
 
     with torch.no_grad():
         with tqdm(total=len(data_loader)) as t:
             for data in data_loader:
 
                 image, label = data
-                    
+
                 image = image.to(args.device, non_blocking=True)
                 label = label.to(args.device, non_blocking=True)
 
-                #forward
+                # forward
                 output = model(image, is_first_dataset)
                 loss = criterion(output, label)
 
@@ -112,10 +105,11 @@ def val_evaluate(model, data_loader, criterion, metrics, is_first_dataset, args)
 
     acc_mean = acc_summ / len(data_loader)
     loss_mean = loss_summ / len(data_loader)
-    
+
     print(f'Val loss: {loss_mean:05.3f} ... Val acc: {acc_mean:05.3f}')
 
     return loss_mean, acc_mean
+
 
 def test_evaluate(model, test_data_loader, metrics, is_first_dataset, cfmatrix_save_folder, args):
     """
@@ -128,7 +122,7 @@ def test_evaluate(model, test_data_loader, metrics, is_first_dataset, cfmatrix_s
     # For confusion matrix
     y_preds = None
     y_true = None
-    
+
     if cfmatrix_save_folder is not None:
         y_preds = []
         y_true = []
@@ -138,23 +132,23 @@ def test_evaluate(model, test_data_loader, metrics, is_first_dataset, cfmatrix_s
             for data in test_data_loader:
                 clip, label = data
                 if args.clip_per_video <= 1:
-                        
+
                     clip = clip.to(args.device, non_blocking=True)
                     label = label.to(args.device, non_blocking=True)
 
-                    #forward
+                    # forward
                     output = torch.softmax(model(clip, is_first_dataset), dim=1)
-                
+
                 else:
                     outputs = []
                     clips, label = data
                     label = label.to(args.device, non_blocking=True)
                     for i in range(args.clip_per_video):
 
-                        clip = clips[:,i,:,:,:].to(args.device, non_blocking=True)
-                        #forward
+                        clip = clips[:, i, :, :, :].to(args.device, non_blocking=True)
+                        # forward
                         outputs.append(torch.softmax(model(clip, is_first_dataset), dim=1))
-                    
+
                     outputs = torch.stack(outputs, dim=1)
                     output = torch.mean(outputs, dim=1)
 
@@ -168,7 +162,7 @@ def test_evaluate(model, test_data_loader, metrics, is_first_dataset, cfmatrix_s
                 t.update()
 
     acc_mean = acc_summ / len(test_data_loader)
-    
+
     print(f'Test acc: {acc_mean:05.3f}')
 
     return acc_mean, y_true, y_preds
@@ -187,11 +181,10 @@ if __name__ == '__main__':
     # set everything
     utils.seed_everything(seed=73)
 
-
     # Get data wrapper
-    data_wrapper = ActionRecognitionDataWrapper(**dict_args, 
+    data_wrapper = ActionRecognitionDataWrapper(**dict_args,
                                                 transforms=utils.get_transforms(args))
-    
+
     # Get test loader
     test_loader_1 = data_wrapper.get_test_1_dataloader()
     test_loader_2 = data_wrapper.get_test_2_dataloader()
@@ -203,9 +196,8 @@ if __name__ == '__main__':
 
     else:
         NUM_CLASSES_1 = 101
-    
-    args.NUM_CLASSES_1 = NUM_CLASSES_1
 
+    args.NUM_CLASSES_1 = NUM_CLASSES_1
 
     if args.dataset_2 == 'hmdb51':
         NUM_CLASSES_2 = 51
@@ -213,37 +205,37 @@ if __name__ == '__main__':
         NUM_CLASSES_2 = 101
 
     args.NUM_CLASSES_2 = NUM_CLASSES_2
-    # Get model 
+    # Get model
     if args.model_name == "c3d":
         net = C3D(**dict_args,
-                    n_class_1=NUM_CLASSES_1, n_class_2=NUM_CLASSES_2)
+                  n_class_1=NUM_CLASSES_1, n_class_2=NUM_CLASSES_2)
     elif args.model_name == "non_local":
         net = NonLocalI3Res(**dict_args,
                             num_classes_1=NUM_CLASSES_1, num_classes_2=NUM_CLASSES_2)
-        
+
     elif args.model_name == "late_fusion":
-        net = LateFusion(**dict_args,n_class_1=NUM_CLASSES_1, n_class_2=NUM_CLASSES_2)
-      
+        net = LateFusion(**dict_args,
+                         n_class_1=NUM_CLASSES_1, n_class_2=NUM_CLASSES_2)
+
     net.to(args.device)
 
     # Loss functions
-    criterion = nn.CrossEntropyLoss() 
+    criterion = nn.CrossEntropyLoss()
 
     # Load weights
     utils.load_checkpoint(os.path.join(args.ckp_dir, args.restore_file), net)
 
     # Evaluate
     print("Evaluate on test set the first dataset ...")
-    test_acc, y_true_1, y_preds_1 = test_evaluate(net, test_loader_1, utils.acc_metrics,True, args.ckp_dir, args)
-    test_metrics = {'test_acc_1':test_acc}
+    test_acc, y_true_1, y_preds_1 = test_evaluate(net, test_loader_1, utils.acc_metrics, True, args.ckp_dir, args)
+    test_metrics = {'test_acc_1': test_acc}
 
     json_path = os.path.join(args.ckp_dir, 'metrics_test_1.json')
     utils.save_dict_to_json(test_metrics, json_path)
     print(f"Save metrics to {json_path}")
 
-
     print("Evaluate on test set the second dataset ...")
-    test_acc, y_true_2, y_preds_2  = test_evaluate(net, test_loader_2, utils.acc_metrics, False, args.ckp_dir, args)
+    test_acc, y_true_2, y_preds_2 = test_evaluate(net, test_loader_2, utils.acc_metrics, False, args.ckp_dir, args)
     test_metrics['test_acc_2'] = test_acc
 
     json_path = os.path.join(args.ckp_dir, 'metrics_test_2.json')
@@ -253,18 +245,18 @@ if __name__ == '__main__':
 
     cf_matrix_1 = confusion_matrix(y_true_1, y_preds_1)
     plt.figure(figsize=size_confusion[args.dataset_1])
-    df_cm = pd.DataFrame(cf_matrix_1, index = list(get_map_id_to_label(args.dataset_1)[0].values()),
-                    columns = list(get_map_id_to_label(args.dataset_1)[0].values()))
-    sns.heatmap(df_cm, annot=False)     # display layers: 
+    df_cm = pd.DataFrame(cf_matrix_1, index=list(get_map_id_to_label(args.dataset_1)[0].values()),
+                         columns=list(get_map_id_to_label(args.dataset_1)[0].values()))
+    sns.heatmap(df_cm, annot=False)     # display layers:
     save_path_1 = os.path.join(args.ckp_dir, 'confusion_matrix_1.png')
     plt.savefig(save_path_1)
     print(f"Save confusion matrix to {save_path_1}")
 
     cf_matrix_2 = confusion_matrix(y_true_2, y_preds_2)
     plt.figure(figsize=size_confusion[args.dataset_2])
-    df_cm = pd.DataFrame(cf_matrix_2, index = list(get_map_id_to_label(args.dataset_2)[0].values()),
-                    columns = list(get_map_id_to_label(args.dataset_2)[0].values()))
-    sns.heatmap(df_cm, annot=False)     # display layers: 
+    df_cm = pd.DataFrame(cf_matrix_2, index=list(get_map_id_to_label(args.dataset_2)[0].values()),
+                         columns=list(get_map_id_to_label(args.dataset_2)[0].values()))
+    sns.heatmap(df_cm, annot=False)     # display layers:
     save_path_2 = os.path.join(args.ckp_dir, 'confusion_matrix_2.png')
     plt.savefig(save_path_2)
     print(f"Save confusion matrix to {save_path_2}")

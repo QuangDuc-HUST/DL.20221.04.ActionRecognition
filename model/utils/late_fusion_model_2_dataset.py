@@ -13,13 +13,13 @@ class LateFusion(nn.Module):
     """
     Pytorch implementation of LRCN: PretrainConv -> Pooling -> MLP
     """
-    def __init__(self, n_class_first, n_class_second, latent_dim,  *args, **kwargs):
+    def __init__(self, n_class_first, n_class_second, latent_dim, *args, **kwargs):
 
         super(LateFusion, self).__init__()
         self.conv_model = PretrainedConv(latent_dim)
         self.pooling_layer = nn.AdaptiveAvgPool1d(1)
         self.output_layer_1 = nn.Linear(latent_dim, n_class_first)
-        self.output_layer_2 = nn.Linear(latent_dim, n_class_second) 
+        self.output_layer_2 = nn.Linear(latent_dim, n_class_second)
 
     def forward(self, x, is_class_first=True):
 
@@ -43,7 +43,7 @@ class PretrainedConv(nn.Module):
         super(PretrainedConv, self).__init__()
         self.conv_model = models.resnet152(pretrained=True)
         # self.conv_model = models.resnet152(weights='DEFAULT')
-        
+
         for param in self.conv_model.parameters():
             param.requires_grad = False
 
@@ -51,4 +51,3 @@ class PretrainedConv(nn.Module):
 
     def forward(self, x):
         return self.conv_model(x)
-
