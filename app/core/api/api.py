@@ -87,5 +87,4 @@ async def predict_action(model_name: str = Form(default='lrcn'), file: UploadFil
 
     print(predict_label)
 
-    # write_result_to_video(f"Predict: {predict_label.loc[1]['label']}")
     return RedirectResponse('/', status_code=status.HTTP_303_SEE_OTHER)
