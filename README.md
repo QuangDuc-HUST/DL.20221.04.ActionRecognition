@@ -49,7 +49,7 @@ Please follow the instructions on the Colab Version notebook
 
 
 ## Quick starts (on your local machine)
-*For more details, we also comment it in every files*
+*For more details, we also give the comments in every files*
 
 
 #### Build the simple `dataset` (download extracted frames data)
