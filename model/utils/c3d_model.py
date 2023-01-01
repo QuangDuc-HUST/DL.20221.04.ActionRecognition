@@ -1,6 +1,6 @@
 #
 #
-#   
+#
 #
 #
 
@@ -43,7 +43,6 @@ class C3D(nn.Module):
 
     def forward(self, x):
 
-      
         x = x.transpose(1, 2)
 
         h = self.relu(self.conv1(x))
@@ -74,9 +73,10 @@ class C3D(nn.Module):
 
         return logits
 
+
 """
 References
 ----------
-[1] Tran, Du, et al. "Learning spatiotemporal features with 3d convolutional networks." 
+[1] Tran, Du, et al. "Learning spatiotemporal features with 3d convolutional networks."
 Proceedings of the IEEE international conference on computer vision. 2015.
 """

@@ -4,6 +4,7 @@
 
 from .utils import lrcn_model
 
+
 class LRCN(lrcn_model.ConvLSTM):
     @staticmethod
     def add_model_specific_args(parent_parser):
@@ -14,5 +15,5 @@ class LRCN(lrcn_model.ConvLSTM):
         parser.add_argument("--bidirectional", action='store_false')
         return parent_parser
 
-    def __init__(self, latent_dim, hidden_size, lstm_layers, bidirectional, n_class,  *args, **kwargs):
+    def __init__(self, latent_dim, hidden_size, lstm_layers, bidirectional, n_class, *args, **kwargs):
         super(LRCN, self).__init__(latent_dim, hidden_size, lstm_layers, bidirectional, n_class)
