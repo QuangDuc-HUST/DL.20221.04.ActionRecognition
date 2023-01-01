@@ -9,7 +9,7 @@
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1clNeKs8McY2DIAGWTBJosmwoArQEOKWJ?usp=sharing)
 
 ## Quick starts
-*For more details, we also comment it in every files*
+*For more details, we also comment in every files*
 
 
 #### Build the simple `dataset` (download extracted frames data)
