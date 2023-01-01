@@ -37,15 +37,15 @@ I3D_ARGS = {'model_name': 'i3d',
 
 ARTIFACT_NAME_NON_LOCAL = 'ucf101-non-local-16f-5c-224-resnet-backbone-lr-1e-4-epochs-5'
 NON_LOCAL_ARGS = {'model_name': 'non_local',
-            'use_nl': True,
-            'weight_folder': './model/weights/',
-            'sample_type': '16_frames_conse_rand',
-            'resize_to': 224
-            }
+                  'use_nl': True,
+                  'weight_folder': './model/weights/',
+                  'sample_type': '16_frames_conse_rand',
+                  'resize_to': 224
+                  }
 
 ARTIFACT_NAME_LATE_FUSION = 'ucf101-late-fusion-5f-uni-256-resnet-backbone-lr-5e-4-epochs-20'
 LATE_FUSION_ARGS = {'model_name': 'late_fusion',
-            'latent_dim': 512,
-            'sample_type': '5_frames_uniform',
-            'resize_to': 256
-            }
+                    'latent_dim': 512,
+                    'sample_type': '5_frames_uniform',
+                    'resize_to': 256
+                    }

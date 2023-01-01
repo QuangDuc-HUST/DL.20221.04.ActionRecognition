@@ -10,16 +10,35 @@
 ## Project Structure 
 
 ```
-README.md               
-ckp/                    # Default checkpoint folder
-data/                   # Default data folder
-model/
-script/                 # Script for downloading the extracted data
-build_dataset.py        
-evaluate.py
-inference.py
-train.py
-utils.py
+├── __pycache__
+├── app
+│   ├── __pycache__
+│   ├── core
+│   │   ├── api
+│   │   │   └── __pycache__
+│   │   ├── constants
+│   │   │   └── __pycache__
+│   │   └── utils
+│   │       └── __pycache__
+│   ├── staging
+│   │   └── video
+│   └── templates
+│       └── static
+│           ├── css
+│           ├── img
+│           └── js
+├── ckp
+├── data
+│   ├── HMDB51
+│   │   └── annotation
+│   └── UCF101
+│       └── annotation
+├── model
+│   ├── __pycache__
+│   ├── utils
+│   │   └── __pycache__
+│   └── weights
+└── script
 ```
 *For more details, please read the README.md in each sub-directory and each file.*
 
@@ -52,44 +71,14 @@ Please follow the instructions on the Colab Version notebook
 *For more details, we also comment it in every files*
 
 
-#### Build the simple `dataset` (download extracted frames data)
-~ 20GB for the basic extracted frames dataset (for more dataset, please read in `build_dataset.py`)
+#### Start webserver (FastAPI) in your local machine
 ```
-    python build_dataset --dataset ucf101 --process_type 5_frames_uniform --kaggle
+    uvicorn main:app --reload
 ```
-* This will automatic download the frame extracted (5 frames in one video uniform distributed) dataset UCF101 from kaggle platform, then unzip and store in `./data/UCF101/5_frames_uniform/`.
 
-#### `Training` the model. Simple run
-```
-   python train.py --model_name late_fusion --batch_size 64 --data_dir './data/UCF101/5_frames_uniform/' --dataset 'ucf101' --max_epochs 20 --lr 0.0005 
-```
-* We train the downloaded extracted frame dataset by using Late Fusion model with batch size = 64, learning rate = 0.0005, maximum epochs = 20.
-#### `Evaluate` the model on the test set
-```
-    python evaluate.py --model_name late_fusion --batch_size 32 --data_dir './data/UCF101/5_frames_uniform/' --dataset 'ucf101' 
-```
-* We evaluate the ucf101 on the trained previous model with batch size is 32.
+#### On your browser, go to <a href="http://127.0.0.1:8000" class="external-link" target="_blank">127.0.0.1:8000</a>
 
-#### `Prediction` the model on a new video 
-```
-    python inference.py --model_name late_fusion --video_path /path/to/video --dataset ucf101 
-```
-* Predict a new video based on ucf101 dataset label and return a list of percentage of classes
+#### Chose model type, upload the video that you want to make prediction and get the result!!!
 
-
-## Advanced training use
-
-We recommend read through `train.py` and `build_dataset` to get intuition of what options we offer.
-
----
-## EDA  
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1c594erS-_glCHjxHIWpV1kh2A_cOf6ti?usp=sharing)
-
-
-## Visualisation of what the model has learned
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1BG4_e7xbXrhvO9rffRuH2pUtj_sxppdf?usp=sharing)
-
-## Deployment on Colab Machine
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1Cm7VICYWw32mVDEAEXYDsUQHrw3TlKfN?usp=sharing)
 
 

@@ -14,14 +14,14 @@ import moviepy.editor as moviepy
 import inference
 
 
-
 def get_default_agr(args):
 
     args.device = utils.get_training_device()
     args.weight_path = glob.glob(f'./artifacts/*{args.model_name.replace("_", "-")}*/*.pth')[0]
     args.dataset = DATASET_101
-    
+
     return args
+
 
 def download_model():
     api = wandb.Api()
@@ -57,7 +57,7 @@ def download_model():
         artifact.get_path(WEIGHT_FILE).download()
         print('Download LATE FUSION completed!')
     except Exception as e:
-        print(traceback.format_exc()) 
+        print(traceback.format_exc())
 
 
 def predict(input, args):
@@ -78,4 +78,3 @@ def convert_avi_to_mp4(filename):
     clip.close()
 
     print('done')
-

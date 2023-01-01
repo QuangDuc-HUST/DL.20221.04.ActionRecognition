@@ -18,6 +18,7 @@ templates = Jinja2Templates(directory="app/templates")
 predict_label = None
 softmax_res = None
 
+
 @router.get("/")
 async def main(request: Request):
     if predict_label is not None:
@@ -66,7 +67,7 @@ async def predict_action(model_name: str = Form(default='lrcn'), file: UploadFil
 
         elif model_name == 'non_local':
             res, sftm = predict(temp.name, argparse.Namespace(**NON_LOCAL_ARGS))
-        
+
         else:
             res, sftm = predict(temp.name, argparse.Namespace(**LATE_FUSION_ARGS))
 
