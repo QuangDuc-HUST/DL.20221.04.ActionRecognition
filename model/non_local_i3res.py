@@ -9,6 +9,7 @@ from torch import nn
 from .utils import non_local_i3res_model
 from .utils.utils import download_weights
 
+
 class NonLocalI3Res(non_local_i3res_model.I3Res50):
     @staticmethod
     def add_model_specific_args(parent_parser):
@@ -18,15 +19,15 @@ class NonLocalI3Res(non_local_i3res_model.I3Res50):
 
         return parent_parser
 
-    def __init__(self, num_classes, use_nl, weight_folder, 
-                block=non_local_i3res_model.Bottleneck, 
-                layers=[3, 4, 6, 3],
-                *args,
-                **kwargs):
+    def __init__(self, num_classes, use_nl, weight_folder,
+                 block=non_local_i3res_model.Bottleneck,
+                 layers=[3, 4, 6, 3],
+                 *args,
+                 **kwargs):
 
         super().__init__(block=block, layers=layers, use_nl=use_nl)
-        
-        if use_nl: 
+
+        if use_nl:
             file_name = "i3res_nonlocal.pth"
         else:
             file_name = "i3res_baseline.pth"

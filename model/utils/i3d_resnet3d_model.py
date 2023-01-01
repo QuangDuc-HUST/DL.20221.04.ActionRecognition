@@ -1,10 +1,11 @@
 #
 #
-#  I3d Resnet3D Implementation 
+#  I3d Resnet3D Implementation
 #  Source: https://github.com/PPPrior/i3d-pytorch
-# 
+#
 
 import torch.nn as nn
+
 
 class I3D(nn.Module):
     """
@@ -69,4 +70,3 @@ class I3DHead(nn.Module):
         cls_score = self.fc_cls(x)
         # [N, num_classes]
         return cls_score
-

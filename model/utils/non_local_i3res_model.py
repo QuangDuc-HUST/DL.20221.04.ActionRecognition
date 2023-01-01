@@ -1,12 +1,13 @@
 #
 #
-# Non-local python implementation 
+# Non-local python implementation
 # Source code: https://github.com/Tushar-N/pytorch-resnet3d
 #
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 
 class Bottleneck(nn.Module):
     expansion = 4
@@ -24,8 +25,7 @@ class Bottleneck(nn.Module):
         self.stride = stride
 
         outplanes = planes * 4
-        self.nl = NonLocalBlock(outplanes, outplanes, outplanes//2) if use_nl else None
-
+        self.nl = NonLocalBlock(outplanes, outplanes, outplanes // 2) if use_nl else None
 
     def forward(self, x):
         residual = x
@@ -52,20 +52,21 @@ class Bottleneck(nn.Module):
 
         return out
 
+
 class NonLocalBlock(nn.Module):
     def __init__(self, dim_in, dim_out, dim_inner):
         super(NonLocalBlock, self).__init__()
 
         self.dim_in = dim_in
-        self.dim_inner = dim_inner  
+        self.dim_inner = dim_inner
         self.dim_out = dim_out
 
-        self.theta = nn.Conv3d(dim_in, dim_inner, kernel_size=(1,1,1), stride=(1,1,1), padding=(0,0,0))
-        self.maxpool = nn.MaxPool3d(kernel_size=(1,2,2), stride=(1,2,2), padding=(0,0,0))
-        self.phi = nn.Conv3d(dim_in, dim_inner, kernel_size=(1,1,1), stride=(1,1,1), padding=(0,0,0))
-        self.g = nn.Conv3d(dim_in, dim_inner, kernel_size=(1,1,1), stride=(1,1,1), padding=(0,0,0))
+        self.theta = nn.Conv3d(dim_in, dim_inner, kernel_size=(1, 1, 1), stride=(1, 1, 1), padding=(0, 0, 0))
+        self.maxpool = nn.MaxPool3d(kernel_size=(1, 2, 2), stride=(1, 2, 2), padding=(0, 0, 0))
+        self.phi = nn.Conv3d(dim_in, dim_inner, kernel_size=(1, 1, 1), stride=(1, 1, 1), padding=(0, 0, 0))
+        self.g = nn.Conv3d(dim_in, dim_inner, kernel_size=(1, 1, 1), stride=(1, 1, 1), padding=(0, 0, 0))
 
-        self.out = nn.Conv3d(dim_inner, dim_out, kernel_size=(1,1,1), stride=(1,1,1), padding=(0,0,0))
+        self.out = nn.Conv3d(dim_inner, dim_out, kernel_size=(1, 1, 1), stride=(1, 1, 1), padding=(0, 0, 0))
         self.bn = nn.BatchNorm3d(dim_out)
 
     def forward(self, x):
@@ -79,8 +80,8 @@ class NonLocalBlock(nn.Module):
 
         theta_shape_5d = theta.shape
         theta, phi, g = theta.view(batch_size, self.dim_inner, -1), phi.view(batch_size, self.dim_inner, -1), g.view(batch_size, self.dim_inner, -1)
-      
-        theta_phi = torch.bmm(theta.transpose(1, 2), phi) # (8, 1024, 784) * (8, 1024, 784) => (8, 784, 784)
+
+        theta_phi = torch.bmm(theta.transpose(1, 2), phi)  # (8, 1024, 784) * (8, 1024, 784) => (8, 784, 784)
         theta_phi_sc = theta_phi * (self.dim_inner**-.5)
         p = F.softmax(theta_phi_sc, dim=-1)
 
@@ -122,23 +123,22 @@ class I3Res50(nn.Module):
 
     def _make_layer(self, block, planes, blocks, stride, temp_conv, temp_stride, nonlocal_mod=1000):
         downsample = None
-        if stride != 1 or self.inplanes != planes * block.expansion or temp_stride[0]!=1:
+        if stride != 1 or self.inplanes != planes * block.expansion or temp_stride[0] != 1:
             downsample = nn.Sequential(
                 nn.Conv3d(self.inplanes, planes * block.expansion, kernel_size=(1, 1, 1), stride=(temp_stride[0], stride, stride), padding=(0, 0, 0), bias=False),
-                nn.BatchNorm3d(planes * block.expansion)
-                )
+                nn.BatchNorm3d(planes * block.expansion))
 
         layers = []
         layers.append(block(self.inplanes, planes, stride, downsample, temp_conv[0], temp_stride[0], False))
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
-            layers.append(block(self.inplanes, planes, 1, None, temp_conv[i], temp_stride[i], i%nonlocal_mod==nonlocal_mod-1))
+            layers.append(block(self.inplanes, planes, 1, None, temp_conv[i], temp_stride[i], i % nonlocal_mod == nonlocal_mod - 1))
 
         return nn.Sequential(*layers)
 
     def forward(self, x):
 
-        x =  x.transpose(1, 2)
+        x = x.transpose(1, 2)
 
         x = self.conv1(x)
         x = self.bn1(x)

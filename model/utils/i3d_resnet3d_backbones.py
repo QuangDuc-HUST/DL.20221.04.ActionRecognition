@@ -1,6 +1,6 @@
 #
 #
-# I3D Resnet3D backbones Pytorch implementation 
+# I3D Resnet3D backbones Pytorch implementation
 # Source: https://github.com/PPPrior/i3d-pytorch/blob/master/models/backbones/resnet3d.py
 #
 

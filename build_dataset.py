@@ -1,7 +1,7 @@
 #
 #
 # Building the dataset
-# 
+#
 #
 import os
 import argparse
@@ -19,35 +19,31 @@ def get_dataset_arg():
     parser.add_argument('--google', action="store_true")
     parser.add_argument('--google_access_key', type=str, default='')
     parser.add_argument('--dataset', required=True, type=str, choices=['ucf101', 'hmdb51'])
-    parser.add_argument('--process_type', type=str, default='5_frames_uniform', 
-                        choices=['5_frames_uniform', '16_frames_conse_rand', '5_clips_16_frames'] )
-    
-    return parser.parse_args()
+    parser.add_argument('--process_type', type=str, default='5_frames_uniform',
+                        choices=['5_frames_uniform', '16_frames_conse_rand', '5_clips_16_frames'])
 
+    return parser.parse_args()
 
 
 def get_data_google_id(dataset, process_type):
 
-    DATASET_IDS = {
-    "ucf101_5_frames_uniform": "17DHqu9-ySzg0nh55QCGqT6gFd38UZDPR",
-    "ucf101_16_frames_conse_rand": "1-6zxq5eV0NFLimoasGzztRT35q3LtepF",
-    "hmdb51_5_frames_uniform": "1jBV4ZFuWDxUgPezXdoLiX15ZyICnVW9X",
-    "hmdb51_16_frames_conse_rand": "1-AzbJDJ3KQdnnXSXLB8AuDisds4a5O_J",
-    }
+    DATASET_IDS = {"ucf101_5_frames_uniform": "17DHqu9-ySzg0nh55QCGqT6gFd38UZDPR",
+                   "ucf101_16_frames_conse_rand": "1-6zxq5eV0NFLimoasGzztRT35q3LtepF",
+                   "hmdb51_5_frames_uniform": "1jBV4ZFuWDxUgPezXdoLiX15ZyICnVW9X",
+                   "hmdb51_16_frames_conse_rand": "1-AzbJDJ3KQdnnXSXLB8AuDisds4a5O_J"}
 
     return DATASET_IDS[dataset + '_' + process_type]
 
 
 def get_data_kaggle_id(dataset, process_type):
-    
-    DATASET_IDS = {
-    "ucf101_5_frames_uniform": "alas123dc/ucf101-5-uni",
-    "ucf101_16_frames_conse_rand": "alas123dc/ucf101-16-con-rand",
-    "hmdb51_5_frames_uniform": "alas123dc/hmdb51-5-uni",
-    "hmdb51_16_frames_conse_rand": "alas123dc/hmdb51-16-con-rand",
-    }
+
+    DATASET_IDS = {"ucf101_5_frames_uniform": "alas123dc/ucf101-5-uni",
+                   "ucf101_16_frames_conse_rand": "alas123dc/ucf101-16-con-rand",
+                   "hmdb51_5_frames_uniform": "alas123dc/hmdb51-5-uni",
+                   "hmdb51_16_frames_conse_rand": "alas123dc/hmdb51-16-con-rand"}
 
     return DATASET_IDS[dataset + '_' + process_type]
+
 
 if __name__ == '__main__':
     args = get_dataset_arg()
@@ -61,10 +57,9 @@ if __name__ == '__main__':
     if args.google and args.google_access_key == '':
         raise("Input google access key.")
 
-
     # Create dataset folder if not exists
-    final_data_folder = os.path.join(args.data_folder, 
-                                     args.dataset.upper(), 
+    final_data_folder = os.path.join(args.data_folder,
+                                     args.dataset.upper(),
                                      args.process_type)
 
     if not os.path.exists(final_data_folder):
@@ -97,12 +92,11 @@ if __name__ == '__main__':
     if not os.path.exists(os.path.join('./temp', zip_file_name)):
         zip_file_name = os.listdir('./temp')[0]
 
-
     runcmd(f'unzip -qo ./temp/{zip_file_name} -d {final_data_folder} \
             && rm -rf ./temp/                                        \
             && mv {final_data_folder}/kaggle/temp/*/* {final_data_folder}/ \
-            && rm -rf {final_data_folder}/kaggle', 
-            is_wait=True)
+            && rm -rf {final_data_folder}/kaggle',
+           is_wait=True)
 
     print("--DONE--")
     print("-" * 20)
