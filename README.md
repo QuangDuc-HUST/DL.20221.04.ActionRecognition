@@ -78,7 +78,7 @@ Please follow the instructions on the Colab Version notebook
 
 #### On your browser, go to <a href="http://127.0.0.1:8000" class="external-link" target="_blank">127.0.0.1:8000</a>
 
-#### Chose model type, upload the video that you want to make prediction and get the result!!!
+#### Chose model type, upload the video (use video from UCF101 dataset only) that you want to make prediction and get the result!!!
 
 
 
