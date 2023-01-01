@@ -6,6 +6,14 @@ import argparse
 
 from tqdm import tqdm
 
+from sklearn.metrics import confusion_matrix
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+import warnings
+warnings.simplefilter("ignore", UserWarning)
+
 import torch
 from torch import nn
 
@@ -18,7 +26,7 @@ from model.late_fusion import LateFusion
 from model.data_loader import ActionRecognitionDataWrapper 
 
 import utils
-from utils import WandbLogger
+from utils import WandbLogger, get_map_id_to_label
 
 def get_arg_parser():
     """
@@ -78,6 +86,7 @@ def get_arg_parser():
 
     # Wandb specific args
     parser.add_argument('--enable_wandb', action='store_true')
+    parser.add_argument('--project', type=str, default="dl_action_recognition")
 
     return parser.parse_args()
 
@@ -117,13 +126,18 @@ def val_evaluate(model, data_loader, criterion, metrics, args):
 
     return loss_mean, acc_mean
 
-def test_evaluate(model, test_data_loader, metrics, args):
+def test_evaluate(model, test_data_loader, metrics, cfmatrix_save_folder, args):
     """
     Test for one epoch
     """
     model.eval()
 
     acc_summ = 0
+
+    # For confusion matrix
+    if cfmatrix_save_folder is not None:
+        y_preds = []
+        y_true = []
 
     with torch.no_grad():
         with tqdm(total=len(test_data_loader)) as t:
@@ -153,11 +167,29 @@ def test_evaluate(model, test_data_loader, metrics, args):
                 acc = metrics(output, label)
                 acc_summ += acc.item()
 
+                if cfmatrix_save_folder is not None:
+                    y_preds.extend(output.argmax(1).data.cpu().numpy())
+                    y_true.extend(label.data.cpu().numpy())
+
                 t.update()
 
     acc_mean = acc_summ / len(test_data_loader)
     
     print(f'Test acc: {acc_mean:05.3f}')
+
+    if cfmatrix_save_folder is not None:
+        size_confusion = {'ucf101': (34, 24), 'hmdb51': (24, 17)}
+        cf_matrix = confusion_matrix(y_true, y_preds)
+        plt.figure(figsize=size_confusion[args.dataset])
+        df_cm = pd.DataFrame(cf_matrix, index = list(get_map_id_to_label(args.dataset)[0].values()),
+                     columns = list(get_map_id_to_label(args.dataset)[0].values()))
+        sns.heatmap(df_cm, annot=False)     # display layers: 
+        save_path = os.path.join(cfmatrix_save_folder, 'confusion_matrix.png')
+        plt.savefig(save_path)
+        print(f"Save confusion matrix to {save_path}")
+
+        if args.enable_wandb:
+            WandbLogger.save_file_artifact(args.project, save_path, "confusion_matrix", args)
 
     return acc_mean
 
@@ -185,28 +217,29 @@ if __name__ == '__main__':
 
     # Get NUM_CLASSES
     if args.dataset == 'hmdb51':
-        NUM_CLASSES = 51
+        args.NUM_CLASSES = 51
     else:
-        NUM_CLASSES = 101
+        args.NUM_CLASSES = 101
+
 
     # Get model 
     if args.model_name == "lrcn":
         net = LRCN(**dict_args,
-                    n_class=NUM_CLASSES)
+                    n_class=args.NUM_CLASSES)
     elif args.model_name == "c3d":
         net = C3D(**dict_args,
-                    n_class=NUM_CLASSES)
+                    n_class=args.NUM_CLASSES)
     elif args.model_name == "i3d":
         net = I3D(**dict_args,
-                    num_classes=NUM_CLASSES)
+                    num_classes=args.NUM_CLASSES)
 
     elif args.model_name == "non_local":
         net = NonLocalI3Res(**dict_args,
-                            num_classes=NUM_CLASSES)
+                            num_classes=args.NUM_CLASSES)
         
     elif args.model_name == "late_fusion":
         net = LateFusion(**dict_args, 
-                        n_class=NUM_CLASSES)
+                        n_class=args.NUM_CLASSES)
       
     net.to(args.device)
 
@@ -217,7 +250,7 @@ if __name__ == '__main__':
     utils.load_checkpoint(os.path.join(args.ckp_dir, args.restore_file), net)
 
     # Evaluate
-    test_acc = test_evaluate(net, test_loader, utils.acc_metrics, args)
+    test_acc = test_evaluate(net, test_loader, utils.acc_metrics, args.ckp_dir, args)
     test_metrics = {'test_acc':test_acc}
 
     json_path = os.path.join(args.ckp_dir, 'metrics_test.json')

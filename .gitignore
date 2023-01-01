@@ -4,6 +4,7 @@ wandb/*
 # weights 
 *.pt
 *.pth
+*.pickle
 
 # json logging
 ckp/*.json

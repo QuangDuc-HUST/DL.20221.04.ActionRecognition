@@ -10,6 +10,8 @@ import random
 import shutil
 import subprocess
 
+import pandas as pd
+
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 import cv2
@@ -20,28 +22,36 @@ import torch
 
 def get_transforms(args):
 
-    train_transforms = A.Compose(
-        [
+    train_transforms = A.ReplayCompose(
+        [   
+            # A.RandomResizedCrop(args.resize_to, args.resize_to, interpolation=cv2.INTER_CUBIC),
             A.Resize(args.resize_to, args.resize_to, interpolation=cv2.INTER_CUBIC),
+            # A.HorizontalFlip(p=0.2),
+            # A.VerticalFlip(p=0.2),
+            # A.ColorJitter(p=0.2),
             A.Normalize(),
             ToTensorV2(),
         ]
         )
-    val_transforms = A.Compose(
+
+    val_transforms = A.ReplayCompose(
         [   
             A.Resize(args.resize_to, args.resize_to, interpolation=cv2.INTER_CUBIC),
+            # A.CenterCrop(args.resize_to, args.resize_to),
             A.Normalize(),
             ToTensorV2(),
         ]
         )
-    test_transforms = A.Compose(
+
+    test_transforms = A.ReplayCompose(
         [   
+            # A.CenterCrop(args.resize_to, args.resize_to),
             A.Resize(args.resize_to, args.resize_to, interpolation=cv2.INTER_CUBIC),
             A.Normalize(),
             ToTensorV2(),
         ]
         )
-        
+
     return {'train_transforms': train_transforms, 
             'val_transforms': val_transforms,
             'test_transforms': test_transforms}
@@ -67,7 +77,6 @@ class RunningAverage():
     
     def __call__(self):
         return self.total/float(self.steps)
-
 
 class WandbLogger():
     def __init__(self, args):
@@ -149,6 +158,48 @@ class WandbLogger():
             wandb_run.summary[f'test/{metric}'] = value
         
         wandb_run.summary.update()
+    
+    @staticmethod
+    def save_file_artifact(project_name, file_path, artifact_type, args):
+
+        with open(os.path.join(args.ckp_dir, 'wandb_info.json')) as f:
+            wandb_info = json.load(f)
+
+        import wandb
+
+        with wandb.init(project=project_name) as run:
+            artifact_name = str(wandb_info['id'])
+            artifact = wandb.Artifact(artifact_name, artifact_type) #default artifact_name = run.id
+            artifact.add_file(file_path)
+            run.log_artifact(artifact)
+            run.finish()
+            path = run.path
+
+        api = wandb.Api()
+        run = api.run(path)
+        run.delete()
+
+        print(f"Save {file_path} to {artifact_name} in project {project_name}")
+        print(f"Delete the run {path} after creating the artifact.")
+        print('-'*20)
+        
+def get_map_id_to_label(dataset_name):
+    if dataset_name == "hmdb51":
+        annotation_path = './data/HMDB51/annotation/video_class_to_label.csv'
+    elif dataset_name == "ucf101":
+        annotation_path = './data/UCF101/annotation/video_class_to_label.csv'
+
+    df = pd.read_csv(annotation_path)
+    df = df.sort_values(by="label_id")
+
+    id_to_label = {}
+    label_to_id = {}
+
+    for _ , row in df.iterrows():
+        id_to_label[row['label_id']] = row['video_class_id']
+        label_to_id[row['video_class_id']] = row['label_id']
+
+    return id_to_label, label_to_id
 
 def runcmd(cmd, is_wait=False, *args, **kwargs):
     # function for running command

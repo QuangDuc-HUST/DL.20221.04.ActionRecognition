@@ -4,6 +4,9 @@ import random
 import torch
 import cv2
 
+import warnings
+warnings.simplefilter("ignore", UserWarning)
+
 from model.lrcn import LRCN
 from model.c3d import C3D
 from model.i3d import I3D

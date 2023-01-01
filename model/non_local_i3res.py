@@ -2,12 +2,12 @@
 # API for non local i3res model
 #
 import os
-from urllib import request
 
 import torch
 from torch import nn
 
 from .utils import non_local_i3res_model
+from .utils.utils import download_weights
 
 class NonLocalI3Res(non_local_i3res_model.I3Res50):
     @staticmethod
@@ -26,21 +26,16 @@ class NonLocalI3Res(non_local_i3res_model.I3Res50):
 
         super().__init__(block=block, layers=layers, use_nl=use_nl)
         
-        LINK_DOWNLOAD = {"I3Res50":         "https://transfer.sh/YL1fAh/i3res_baseline.pth",
-                         "I3Res50_nonlocal":"https://transfer.sh/PhrU8U/i3res_nonlocal.pth"}
-
         if use_nl: 
-            link = LINK_DOWNLOAD["I3Res50_nonlocal"]
             file_name = "i3res_nonlocal.pth"
         else:
-            link = LINK_DOWNLOAD["I3Res50"]
             file_name = "i3res_baseline.pth"
 
         weight_path = os.path.join(weight_folder, file_name)
 
         if not os.path.exists(weight_path):
-            print(f"Download the weight to {weight_path}")
-            response = request.urlretrieve(link,  weight_path)    
+            print("Download non-local pretrained weights ...")
+            download_weights(weight_folder, file_name)
 
         self.load_state_dict(torch.load(weight_path))
         print("Load pretrained weights successfully..")
