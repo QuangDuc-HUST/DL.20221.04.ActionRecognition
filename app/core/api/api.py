@@ -23,9 +23,9 @@ model_type = None
 @router.get("/")
 async def main(request: Request):
     if predict_label is not None:
-        return templates.TemplateResponse("predict_home.html", {"request": request, "res": predict_label[['label', 'softmax']].values.tolist(), "heading": ['Label', 'Prediction']})
+        return templates.TemplateResponse("predict_home.html", {"request": request, "res": predict_label[['label', 'softmax']].values.tolist(), "heading": ['Label', 'Prediction'], "model_type": model_type})
     else:
-        return templates.TemplateResponse("predict_home.html", {"request": request, "res": [[None, 100]], "heading": ['Label', 'Prediction']})
+        return templates.TemplateResponse("predict_home.html", {"request": request, "res": [[None, 100]], "heading": ['Label', 'Prediction'], "model_type": model_type})
 
 
 @router.get('/favicon.ico', include_in_schema=False)
@@ -37,7 +37,6 @@ async def favicon():
 async def predict_action(model_name: str = Form(default='lrcn'), file: UploadFile = File()):
     global predict_label, softmax_res, model_type
 
-    model_type = model_name
     res, sftm = None, None
     temp = NamedTemporaryFile(delete=False)
 
@@ -59,18 +58,23 @@ async def predict_action(model_name: str = Form(default='lrcn'), file: UploadFil
         print('Predicting..')
 
         if model_name == 'lrcn':
+            model_type = model_name.upper()
             res, sftm = predict(temp.name, argparse.Namespace(**LRCN_ARGS))
 
         elif model_name == 'c3d':
+            model_type = model_name.upper()
             res, sftm = predict(temp.name, argparse.Namespace(**C3D_ARGS))
 
         elif model_name == 'i3d':
+            model_type = model_name.upper()
             res, sftm = predict(temp.name, argparse.Namespace(**I3D_ARGS))
 
         elif model_name == 'non_local':
+            model_type = model_name.upper().replace('_', '-')
             res, sftm = predict(temp.name, argparse.Namespace(**NON_LOCAL_ARGS))
 
         else:
+            model_type = model_name.upper().replace('_', ' ')
             res, sftm = predict(temp.name, argparse.Namespace(**LATE_FUSION_ARGS))
 
         print('Predicted')
