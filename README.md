@@ -51,7 +51,7 @@ However, we highly recommend to use Google Colab version because of its convenie
 ## Requirements
 ### Google Colab Version (recommended)
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://drive.google.com/drive/folders/1_L19tnAa6udACh7cNzx7mI6-KUYZReG_?usp=sharing)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1Cm7VICYWw32mVDEAEXYDsUQHrw3TlKfN?usp=sharing)
 
 *We used Google Colab Pro Version for this project as some problems may be occurred if you training on the large ( >100GB ) extracted frame dataset.*
 
