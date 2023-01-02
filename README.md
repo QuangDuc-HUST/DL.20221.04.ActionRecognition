@@ -87,7 +87,7 @@ We recommend read through `train.py` and `build_dataset` to get intuition of wha
 
 
 ## Visualisation of what the model has learned
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1BG4_e7xbXrhvO9rffRuH2pUtj_sxppdf?usp=sharing)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1ou2rqD1KvitBzTat8omOie2rGak6BVWw?usp=sharing)
 
 ## Deployment on Colab Machine
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1Cm7VICYWw32mVDEAEXYDsUQHrw3TlKfN?usp=sharing)
