@@ -62,7 +62,7 @@ Please follow the instructions on the Colab Version notebook
     cd DL.20221.04.ActionRecognition/
 
     conda env create -f environment.yml
-    conda activate dlenv
+    # then conda activate the installed environment
 ```
 ---
 
