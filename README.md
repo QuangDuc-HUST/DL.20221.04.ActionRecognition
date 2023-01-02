@@ -71,7 +71,7 @@ Please follow the instructions on the Colab Version notebook
 *For more details, we also comment it in every files*
 
 
-#### Start webserver (FastAPI) in your local machine
+#### Start webserver (FastAPI) in your local machine, and please wait until the application is ready
 ```
     uvicorn main:app --reload
 ```
