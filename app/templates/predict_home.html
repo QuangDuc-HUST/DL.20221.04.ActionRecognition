@@ -32,11 +32,12 @@
 
             <label for="model_name">Choose a model type:</label>
             <select id="model_name_dropdown" name="model_name" value="lrcn" onclick="getModelName()" form="myForm">
+                <option value="late_fusion">Late Fusion</option>
                 <option value="lrcn">LRCN</option>
                 <option value="c3d">C3D</option>
                 <option value="i3d">I3D</option>
                 <option value="non_local">Non-local</option>
-                <option value="late_fusion">Late Fusion</option>
+                
             </select>
             <br>
             <input id="file" name="file" type="file" form="myForm" style="margin: auto;">
@@ -46,6 +47,7 @@
             </a>
         </form>
         <br>
+        <p> Your prediction using model: {{ model }}</p>
         <table id="result">
             <tr>
                 {% for header in heading %}

@@ -17,6 +17,7 @@ templates = Jinja2Templates(directory="app/templates")
 
 predict_label = None
 softmax_res = None
+model_type = None
 
 
 @router.get("/")
@@ -34,8 +35,9 @@ async def favicon():
 
 @router.post("/predict/")
 async def predict_action(model_name: str = Form(default='lrcn'), file: UploadFile = File()):
-    global predict_label, softmax_res
+    global predict_label, softmax_res, model_type
 
+    model_type = model_name
     res, sftm = None, None
     temp = NamedTemporaryFile(delete=False)
 
