@@ -15,9 +15,9 @@
 #### Build the simple `dataset` (download extracted frames data)
 ~ 20GB for the basic extracted frames dataset (for more dataset, please read in `build_dataset.py`)
 ```
-    python build_dataset --dataset ucf101 --process_type 5_frames_uniform --kaggle
+    python build_dataset.py --dataset ucf101 --process_type 5_frames_uniform --kaggle
 
-    python build_dataset --dataset hmdb51 --process_type 5_frames_uniform --kaggle
+    python build_dataset.py --dataset hmdb51 --process_type 5_frames_uniform --kaggle
 ```
 * This will automatic download the frame extracted (5 frames in one video uniform distributed) dataset UCF101 from kaggle platform, then unzip and store in `./data/UCF101/5_frames_uniform/`.
 
